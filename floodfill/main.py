@@ -121,11 +121,19 @@ class Mouse():
                 pygame.draw.line(surface, (255,255,255), (l+(w/2),t), (l+(w/2),t-d), 1)
                 pygame.draw.line(surface, (255,255,255), (l+w,t), (l+w+d,t-d), 1)
         if self.facing == EAST_MASK:
-            pass
+            l = (self.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.height*SCALE) / 2)
+            t = (self.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.width*SCALE) / 2)
+            w = self.height*SCALE
+            h = self.width*SCALE
+            d = 5 * SCALE
+            if self.state == MOUSE_STATE_CHECK:
+                pygame.draw.line(surface, (255,255,255), (l+(w/2),t), (l+(w/2)+d,t-d), 1)
+                pygame.draw.line(surface, (255,255,255), (l+(w/2),t+(h/2)), (l+(w/2)+d,t+(h/2)), 1)
+                pygame.draw.line(surface, (255,255,255), (l+(w/2),t+h), (l+(w/2)+d,t+(w/2)+d), 1)
         if self.facing == SOUTH_MASK:
-            pass
+            raise Exception("not implemented")
         if self.facing == WEST_MASK:
-            pass
+            raise Exception("not implemented")
         if self.state == MOUSE_STATE_CHECK:
             colour = (255,0,0)
         if self.state == MOUSE_STATE_UPDATE:
@@ -147,27 +155,17 @@ class Mouse():
     def check(self):
         logging.debug("check for walls")
         if self.facing == NORTH_MASK:
-            if not self.detected_west():
-                print('scanning west')
-                self.cells[self.location[1]][self.location[0]] |= WEST_MASK<<4
-                if self.wall_detector.west(self.location[0], self.location[1]):
-                    self.cells[self.location[1]][self.location[0]] |= WEST_MASK
-            if not self.detected_north():
-                print('scanning north')
-                self.cells[self.location[1]][self.location[0]] |= NORTH_MASK<<4
-                if self.wall_detector.north(self.location[0], self.location[1]):
-                    self.cells[self.location[1]][self.location[0]] |= NORTH_MASK
-            if not self.detected_east():
-                print('scanning east')
-                self.cells[self.location[1]][self.location[0]] |= EAST_MASK<<4
-                if self.wall_detector.east(self.location[0], self.location[1]):
-                    self.cells[self.location[1]][self.location[0]] |= EAST_MASK
+            self.scan_west()
+            self.scan_north()
+            self.scan_east()
         if self.facing == EAST_MASK:
-            pass
+            self.scan_north()
+            self.scan_east()
+            self.scan_south()
         if self.facing == SOUTH_MASK:
-            pass
+            raise Exception("not implemented")
         if self.facing == WEST_MASK:
-            pass
+            raise Exception("not implemented")
     def update(self):
         logging.debug("update map")
         # do floodfill thing
@@ -176,57 +174,108 @@ class Mouse():
         logging.debug("move")
         directions = []
         if self.facing == NORTH_MASK:
-            # check west
-            x = self.location[0]-1
-            y = self.location[1]
-            #print(x,y)
-            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
-                print("checking west")
-                if not self.wall_west():
-                    num = self.flood[y][x]
-                    print(f"west is {num}")
-                    directions.append({'value': num, 'coord':(x,y)})
-            # check north
-            x = self.location[0]
-            y = self.location[1]-1
-            #print(x,y)
-            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
-                print("checking north")
-                if not self.wall_north():
-                    num = self.flood[y][x]
-                    print(f"north is {num}")
-                    directions.append({'value': num, 'coord':(x,y)})
-            # check east
-            x = self.location[0]+1
-            y = self.location[1]
-            #print(x,y)
-            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
-                print("checking east")
-                if not self.wall_east():
-                    num = self.flood[y][x]
-                    print(f"east is {num}")
-                    directions.append({'value': num, 'coord':(x,y)})
-            # check south
-            #x = self.location[0]
-            #y = self.location[1]+1
-            ##print(x,y)
-            #if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
-            #    print("checking south")
-            #    if not self.wall_south():
-            #        num = self.flood[y][x]
-            #        print(f"south is {num}")
-            #        directions.append({'value': num, 'coord':(x,y)})
-            if len(directions) == 0:
-                raise Exception("No direction")
-            directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
-            self.location = directions[0]['coord']
-            raise Exception("TODO: turn to face direction")
+            dir = self.check_west()
+            if dir:
+                directions.append(dir)
+            dir = self.check_north()
+            if dir:
+                directions.append(dir)
+            dir = self.check_east()
+            if dir:
+                directions.append(dir)
         if self.facing == EAST_MASK:
-            pass
+            dir = self.check_north()
+            if dir:
+                directions.append(dir)
+            dir = self.check_east()
+            if dir:
+                directions.append(dir)
+            dir = self.check_south()
+            if dir:
+                directions.append(dir)
         if self.facing == SOUTH_MASK:
-            pass
+            raise Exception("not implemented")
         if self.facing == WEST_MASK:
-            pass
+            raise Exception("not implemented")
+        if len(directions) == 0:
+            raise Exception("No direction")
+        directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
+        direction = directions[0]
+        if direction['dir'] != self.facing:
+            self.facing = direction['dir']
+        self.location = direction['coord']
+    def scan_north(self):
+        if not self.detected_north():
+            print('scanning north')
+            self.cells[self.location[1]][self.location[0]] |= NORTH_MASK<<4
+            if self.wall_detector.north(self.location[0], self.location[1]):
+                self.cells[self.location[1]][self.location[0]] |= NORTH_MASK
+    def scan_east(self):
+        if not self.detected_east():
+            print('scanning east')
+            self.cells[self.location[1]][self.location[0]] |= EAST_MASK<<4
+            if self.wall_detector.east(self.location[0], self.location[1]):
+                self.cells[self.location[1]][self.location[0]] |= EAST_MASK
+    def scan_south(self):
+        if not self.detected_south():
+            print('scanning south')
+            self.cells[self.location[1]][self.location[0]] |= SOUTH_MASK<<4
+            if self.wall_detector.south(self.location[0], self.location[1]):
+                self.cells[self.location[1]][self.location[0]] |= SOUTH_MASK
+    def scan_west(self):
+        if not self.detected_west():
+            print('scanning west')
+            self.cells[self.location[1]][self.location[0]] |= WEST_MASK<<4
+            if self.wall_detector.west(self.location[0], self.location[1]):
+                self.cells[self.location[1]][self.location[0]] |= WEST_MASK
+    def check_north(self):
+        # check north
+        x = self.location[0]
+        y = self.location[1]-1
+        #print(x,y)
+        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+            print("checking north")
+            if not self.wall_north():
+                num = self.flood[y][x]
+                print(f"north is {num}")
+                return {'value': num, 'coord':(x,y), 'dir':NORTH_MASK}
+        return None
+    def check_east(self):
+        # check east
+        x = self.location[0]+1
+        y = self.location[1]
+        #print(x,y)
+        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+            print("checking east")
+            if not self.wall_east():
+                num = self.flood[y][x]
+                print(f"east is {num}")
+                return {'value': num, 'coord':(x,y), 'dir':EAST_MASK}
+        return None
+    def check_south(self):
+        # check south
+        x = self.location[0]
+        y = self.location[1]+1
+        #print(x,y)
+        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+            print("checking south")
+            if not self.wall_south():
+                num = self.flood[y][x]
+                print(f"south is {num}")
+                return {'value': num, 'coord':(x,y), 'dir':SOUTH_MASK}
+        return None
+    def check_west(self):
+        # check west
+        x = self.location[0]-1
+        y = self.location[1]
+        #print(x,y)
+        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+            print("checking west")
+            if not self.wall_west():
+                num = self.flood[y][x]
+                print(f"west is {num}")
+                return {'value': num, 'coord':(x,y), 'dir':WEST_MASK}
+        return None
     def detected_north(self):
         return (self.cells[self.location[1]][self.location[0]] & NORTH_MASK<<4) == NORTH_MASK<<4
     def detected_east(self):
