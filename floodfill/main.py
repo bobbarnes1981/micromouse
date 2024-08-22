@@ -128,7 +128,7 @@ class Mouse():
             d = 5 * SCALE
             if self.state == MOUSE_STATE_CHECK:
                 pygame.draw.line(surface, (255,255,255), (l+(w/2),t), (l+(w/2)+d,t-d), 1)
-                pygame.draw.line(surface, (255,255,255), (l+(w/2),t+(h/2)), (l+(w/2)+d,t+(h/2)), 1)
+                pygame.draw.line(surface, (255,255,255), (l+(w/2),t+(h/2)), (l+(CELL_SIZE*SCALE)-d,t+(h/2)), 1)
                 pygame.draw.line(surface, (255,255,255), (l+(w/2),t+h), (l+(w/2)+d,t+(w/2)+d), 1)
         if self.facing == SOUTH_MASK:
             raise Exception("not implemented")
