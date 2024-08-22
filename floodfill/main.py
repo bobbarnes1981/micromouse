@@ -148,17 +148,17 @@ class Mouse():
         logging.debug("check for walls")
         if self.facing == NORTH_MASK:
             if not self.detected_west():
-                print('checking w')
+                print('scanning west')
                 self.cells[self.location[1]][self.location[0]] |= WEST_MASK<<4
                 if self.wall_detector.west(self.location[0], self.location[1]):
                     self.cells[self.location[1]][self.location[0]] |= WEST_MASK
             if not self.detected_north():
-                print('checking n')
+                print('scanning north')
                 self.cells[self.location[1]][self.location[0]] |= NORTH_MASK<<4
                 if self.wall_detector.north(self.location[0], self.location[1]):
                     self.cells[self.location[1]][self.location[0]] |= NORTH_MASK
             if not self.detected_east():
-                print('checking e')
+                print('scanning east')
                 self.cells[self.location[1]][self.location[0]] |= EAST_MASK<<4
                 if self.wall_detector.east(self.location[0], self.location[1]):
                     self.cells[self.location[1]][self.location[0]] |= EAST_MASK
@@ -174,10 +174,52 @@ class Mouse():
         pass
     def move(self):
         logging.debug("move")
-        # dumb algorithm
+        directions = []
         if self.facing == NORTH_MASK:
-            if not self.wall_north():
-                self.location = (self.location[0], self.location[1]-1)
+            # check west
+            x = self.location[0]-1
+            y = self.location[1]
+            #print(x,y)
+            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+                print("checking west")
+                if not self.wall_west():
+                    num = self.flood[y][x]
+                    print(f"west is {num}")
+                    directions.append({'value': num, 'coord':(x,y)})
+            # check north
+            x = self.location[0]
+            y = self.location[1]-1
+            #print(x,y)
+            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+                print("checking north")
+                if not self.wall_north():
+                    num = self.flood[y][x]
+                    print(f"north is {num}")
+                    directions.append({'value': num, 'coord':(x,y)})
+            # check east
+            x = self.location[0]+1
+            y = self.location[1]
+            #print(x,y)
+            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+                print("checking east")
+                if not self.wall_east():
+                    num = self.flood[y][x]
+                    print(f"east is {num}")
+                    directions.append({'value': num, 'coord':(x,y)})
+            # check south
+            x = self.location[0]
+            y = self.location[1]+1
+            #print(x,y)
+            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+                print("checking south")
+                if not self.wall_south():
+                    num = self.flood[y][x]
+                    print(f"south is {num}")
+                    directions.append({'value': num, 'coord':(x,y)})
+            if len(directions) == 0:
+                raise Exception("No direction")
+            directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
+            self.location = directions[0]['coord']
         if self.facing == EAST_MASK:
             pass
         if self.facing == SOUTH_MASK:
@@ -221,7 +263,6 @@ class App():
         self._time = time.time()
         self._counter = 0
         self._complete = False
-        self.font = None
     def on_init(self) -> bool:
         """On init"""
         pygame.init()
@@ -229,6 +270,7 @@ class App():
         self._display_surf = pygame.display.set_mode(self._size,
                                                      pygame.HWSURFACE | pygame.DOUBLEBUF)
         self._running = True
+        
         font_name = pygame.font.get_default_font()
         logging.info("System font: %s", font_name)
         self.font = pygame.font.SysFont(None, 22)
@@ -295,6 +337,12 @@ class App():
 
         self.mouse.draw(self._display_surf)
         pygame.draw.circle(self._display_surf, (255,255,255), (((self.target[0]*CELL_SIZE)*SCALE)+(CELL_SIZE*SCALE)/2, ((self.target[1]*CELL_SIZE)*SCALE)+(CELL_SIZE*SCALE)/2), 5*SCALE, 1)
+        
+        for r in range(len(self.mouse.flood)):
+            for c in range(len(self.mouse.flood[r])):
+                num = self.mouse.flood[r][c]
+                img = self.font.render(str(num), True, (80,80,80))
+                self._display_surf.blit(img, (c*CELL_SIZE*SCALE, r*CELL_SIZE*SCALE))
 
         pygame.display.update()
     def on_cleanup(self) -> None:
