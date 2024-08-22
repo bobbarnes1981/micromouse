@@ -17,6 +17,9 @@ MOUSE_STATE_CHECK = 1
 MOUSE_STATE_UPDATE = 2
 MOUSE_STATE_MOVE = 3
 
+MOUSE_MODE_LOWEST = 1
+MOUSE_MODE_HIGHEST = 2
+
 class Maze():
     """Represents the physical maze"""
     def __init__(self):
@@ -65,12 +68,12 @@ class WallDetector():
 
 class Mouse():
     """Represents the micromouse"""
-    def __init__(self, location, target, wall_detector):
+    def __init__(self, location, wall_detector):
         self.location = location
-        self.target = target
         self.wall_detector = wall_detector
         self.facing = NORTH_MASK
         self.state = MOUSE_STATE_CHECK
+        self.mode = MOUSE_MODE_LOWEST
         self.width = 8
         self.height = 10
         self.cells = [
@@ -91,25 +94,75 @@ class Mouse():
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
         ]
-        # TODO: maybe generate this using algorithm?
         self.flood = [
-            [14,13,12,11,10, 9, 8, 7, 7, 8, 9,10,11,12,13,14],
-            [13,12,11,10, 9, 8, 7, 6, 6, 7, 8, 9,10,11,12,13],
-            [12,11,10, 9, 8, 7, 6, 5, 5, 6, 7, 8, 9,10,11,12],
-            [11,10, 9, 8, 7, 6, 5, 4, 4, 5, 6, 7, 8, 9,10,11],
-            [10, 9, 8, 7, 6, 5, 4, 3, 3, 4, 5, 6, 7, 8, 9,10],
-            [ 9, 8, 7, 6, 5, 4, 3, 2, 2, 3, 4, 5, 6, 7, 8, 9],
-            [ 8, 7, 6, 5, 4, 3, 2, 1, 1, 2, 3, 4, 5, 6, 7, 8],
-            [ 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7],
-            [ 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7],
-            [ 8, 7, 6, 5, 4, 3, 2, 1, 1, 2, 3, 4, 5, 6, 7, 8],
-            [ 9, 8, 7, 6, 5, 4, 3, 2, 2, 3, 4, 5, 6, 7, 8, 9],
-            [10, 9, 8, 7, 6, 5, 4, 3, 3, 4, 5, 6, 7, 8, 9,10],
-            [11,10, 9, 8, 7, 6, 5, 4, 4, 5, 6, 7, 8, 9,10,11],
-            [12,11,10, 9, 8, 7, 6, 5, 5, 6, 7, 8, 9,10,11,12],
-            [13,12,11,10, 9, 8, 7, 6, 6, 7, 8, 9,10,11,12,13],
-            [14,13,12,11,10, 9, 8, 7, 7, 8, 9,10,11,12,13,14],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         ]
+        self.q = []
+        self.flood_map()
+    def complete(self):
+        #return self.flood[self.location[1]][self.location[0]] == 0
+        return False
+    def flood_map(self):
+        # clear
+        for r in range(len(self.flood)):
+            for c in range(len(self.flood[r])):
+                self.flood[r][c] = None
+        #print(self.flood)
+        # set target
+        self.flood[7][7] = 0
+        self.q.append((7,7))
+        self.flood[7][8] = 0
+        self.q.append((7,8))
+        self.flood[8][7] = 0
+        self.q.append((8,7))
+        self.flood[8][8] = 0
+        self.q.append((8,8))
+        while len(self.q) > 0:
+            coord = self.q.pop(0)
+            cell_num = self.flood[coord[0]][coord[1]]
+            #print(f"got {coord} num {cell_num}")
+            cell_num = cell_num + 1
+            x = coord[1]
+            y = coord[0]-1
+            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_north(coord[0], coord[1]):
+                if self.flood[y][x] == None:
+                    self.flood[y][x] = cell_num
+                    self.q.append((y,x))
+            x = coord[1]+1
+            y = coord[0]
+            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_east(coord[0], coord[1]):
+                if self.flood[y][x] == None:
+                    self.flood[y][x] = cell_num
+                    self.q.append((y,x))
+            x = coord[1]
+            y = coord[0]+1
+            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_south(coord[0], coord[1]):
+                if self.flood[y][x] == None:
+                    self.flood[y][x] = cell_num
+                    self.q.append((y,x))
+            x = coord[1]-1
+            y = coord[0]
+            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_west(coord[0], coord[1]):
+                if self.flood[y][x] == None:
+                    self.flood[y][x] = cell_num
+                    self.q.append((y,x))
+        #print(self.flood)
+
     def draw(self, surface):
         cl = self.location[0] * CELL_SIZE * SCALE
         ct = self.location[1] * CELL_SIZE * SCALE
@@ -187,8 +240,7 @@ class Mouse():
             self.scan_north()
     def update(self):
         logging.debug("update map")
-        # do floodfill thing
-        pass
+        self.flood_map()
     def move(self):
         logging.debug("move")
         directions = []
@@ -202,6 +254,10 @@ class Mouse():
             dir = self.check_east()
             if dir:
                 directions.append(dir)
+
+            dir = self.check_south()
+            if dir:
+                directions.append(dir)
         if self.facing == EAST_MASK:
             dir = self.check_north()
             if dir:
@@ -210,6 +266,10 @@ class Mouse():
             if dir:
                 directions.append(dir)
             dir = self.check_south()
+            if dir:
+                directions.append(dir)
+
+            dir = self.check_west()
             if dir:
                 directions.append(dir)
         if self.facing == SOUTH_MASK:
@@ -222,6 +282,10 @@ class Mouse():
             dir = self.check_west()
             if dir:
                 directions.append(dir)
+
+            dir = self.check_north()
+            if dir:
+                directions.append(dir)
         if self.facing == WEST_MASK:
             dir = self.check_south()
             if dir:
@@ -232,112 +296,139 @@ class Mouse():
             dir = self.check_north()
             if dir:
                 directions.append(dir)
+
+            dir = self.check_east()
+            if dir:
+                directions.append(dir)
         if len(directions) == 0:
             raise Exception("No direction")
-        # TODO: if smallest number behind wall then re-flood
-        directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
+        if self.mode == MOUSE_MODE_LOWEST:
+            directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
+        if self.mode == MOUSE_MODE_HIGHEST:
+            directions.sort(key=lambda x: x['value'], reverse=True) # sort descending
         direction = directions[0]
-        if direction['acc'] == False:
-            raise Exception("Smallest number not accessible")
         if direction['dir'] != self.facing:
             self.facing = direction['dir']
         self.location = direction['coord']
+        # TODO: how to explore rest of maze once we find the target?
+        # TODO: split mouse logic from rendering code
+        #if self.flood[self.location[1]][self.location[0]] == 0:
+        #    self.mode = MOUSE_MODE_HIGHEST
     def scan_north(self):
-        if not self.detected_north():
+        if not self.detected_north(self.location[1],self.location[0]):
             print('scanning north')
+            y = self.location[1]-1
             self.cells[self.location[1]][self.location[0]] |= NORTH_MASK<<4
+            if y >= 0 and y < MAZE_Y:
+                self.cells[y][self.location[0]] |= SOUTH_MASK<<4
             if self.wall_detector.north(self.location[0], self.location[1]):
                 self.cells[self.location[1]][self.location[0]] |= NORTH_MASK
+                if y >= 0 and y < MAZE_Y:
+                    self.cells[self.location[1]-1][self.location[0]] |= SOUTH_MASK
     def scan_east(self):
-        if not self.detected_east():
+        if not self.detected_east(self.location[1],self.location[0]):
             print('scanning east')
+            x = self.location[0]+1
             self.cells[self.location[1]][self.location[0]] |= EAST_MASK<<4
+            if x >= 0 and x < MAZE_X:
+                self.cells[self.location[1]][x] |= WEST_MASK<<4
             if self.wall_detector.east(self.location[0], self.location[1]):
                 self.cells[self.location[1]][self.location[0]] |= EAST_MASK
+                if x >= 0 and x < MAZE_X:
+                    self.cells[self.location[1]][self.location[0]+1] |= WEST_MASK
     def scan_south(self):
-        if not self.detected_south():
+        if not self.detected_south(self.location[1],self.location[0]):
             print('scanning south')
+            y = self.location[1]+1
             self.cells[self.location[1]][self.location[0]] |= SOUTH_MASK<<4
+            if y >= 0 and y < MAZE_Y:
+                self.cells[y][self.location[0]] |= NORTH_MASK<<4
             if self.wall_detector.south(self.location[0], self.location[1]):
                 self.cells[self.location[1]][self.location[0]] |= SOUTH_MASK
+                if y >= 0 and y < MAZE_Y:
+                    self.cells[self.location[1]+1][self.location[0]] |= NORTH_MASK
     def scan_west(self):
-        if not self.detected_west():
+        if not self.detected_west(self.location[1],self.location[0]):
             print('scanning west')
+            x = self.location[0]-1
             self.cells[self.location[1]][self.location[0]] |= WEST_MASK<<4
+            if x >= 0 and x < MAZE_X:
+                self.cells[self.location[1]][x] |= EAST_MASK<<4
             if self.wall_detector.west(self.location[0], self.location[1]):
                 self.cells[self.location[1]][self.location[0]] |= WEST_MASK
+                if x >= 0 and x < MAZE_X:
+                    self.cells[self.location[1]][self.location[0]-1] |= EAST_MASK
     def check_north(self):
         # check north
         x = self.location[0]
         y = self.location[1]-1
         #print(x,y)
-        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_north(self.location[1],self.location[0]):
             print("checking north")
             num = self.flood[y][x]
             print(f"north is {num}")
-            return {'value': num, 'coord':(x,y), 'dir':NORTH_MASK, 'acc':not self.wall_north()}
+            return {'value': num, 'coord':(x,y), 'dir':NORTH_MASK}
         return None
     def check_east(self):
         # check east
         x = self.location[0]+1
         y = self.location[1]
         #print(x,y)
-        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_east(self.location[1],self.location[0]):
             print("checking east")
             num = self.flood[y][x]
             print(f"east is {num}")
-            return {'value': num, 'coord':(x,y), 'dir':EAST_MASK, 'acc':not self.wall_east()}
+            return {'value': num, 'coord':(x,y), 'dir':EAST_MASK}
         return None
     def check_south(self):
         # check south
         x = self.location[0]
         y = self.location[1]+1
         #print(x,y)
-        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_south(self.location[1],self.location[0]):
             print("checking south")
             num = self.flood[y][x]
             print(f"south is {num}")
-            return {'value': num, 'coord':(x,y), 'dir':SOUTH_MASK, 'acc':not self.wall_south()}
+            return {'value': num, 'coord':(x,y), 'dir':SOUTH_MASK}
         return None
     def check_west(self):
         # check west
         x = self.location[0]-1
         y = self.location[1]
         #print(x,y)
-        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_west(self.location[1],self.location[0]):
             print("checking west")
             num = self.flood[y][x]
             print(f"west is {num}")
-            return {'value': num, 'coord':(x,y), 'dir':WEST_MASK, 'acc':not self.wall_west()}
+            return {'value': num, 'coord':(x,y), 'dir':WEST_MASK}
         return None
-    def detected_north(self):
-        return (self.cells[self.location[1]][self.location[0]] & NORTH_MASK<<4) == NORTH_MASK<<4
-    def detected_east(self):
-        return (self.cells[self.location[1]][self.location[0]] & EAST_MASK<<4) == EAST_MASK<<4
-    def detected_south(self):
-        return (self.cells[self.location[1]][self.location[0]] & SOUTH_MASK<<4) == SOUTH_MASK<<4
-    def detected_west(self):
-        return (self.cells[self.location[1]][self.location[0]] & WEST_MASK<<4) == WEST_MASK<<4
-    def wall_north(self):
-        return (self.cells[self.location[1]][self.location[0]] & NORTH_MASK) == NORTH_MASK
-    def wall_east(self):
-        return (self.cells[self.location[1]][self.location[0]] & EAST_MASK) == EAST_MASK
-    def wall_south(self):
-        return (self.cells[self.location[1]][self.location[0]] & SOUTH_MASK) == SOUTH_MASK
-    def wall_west(self):
-        return (self.cells[self.location[1]][self.location[0]] & WEST_MASK) == WEST_MASK
+    def detected_north(self, y, x):
+        return (self.cells[y][x] & NORTH_MASK<<4) == NORTH_MASK<<4
+    def detected_east(self, y, x):
+        return (self.cells[y][x] & EAST_MASK<<4) == EAST_MASK<<4
+    def detected_south(self, y, x):
+        return (self.cells[y][x] & SOUTH_MASK<<4) == SOUTH_MASK<<4
+    def detected_west(self, y, x):
+        return (self.cells[y][x] & WEST_MASK<<4) == WEST_MASK<<4
+    def wall_north(self, y, x):
+        return (self.cells[y][x] & NORTH_MASK) == NORTH_MASK
+    def wall_east(self, y, x):
+        return (self.cells[y][x] & EAST_MASK) == EAST_MASK
+    def wall_south(self, y, x):
+        return (self.cells[y][x] & SOUTH_MASK) == SOUTH_MASK
+    def wall_west(self, y, x):
+        return (self.cells[y][x] & WEST_MASK) == WEST_MASK
 
 class App():
     """Runs the simulation, curently attempt to simulate mouse maze mapping and floodfill, we are ignoring mouse navigation"""
     def __init__(self):
-        self._delay = 0.3
+        self._delay = 0.03
 
         self.maze = Maze()
         self.maze.validate()
 
         self.start = (0,15)
-        self.target = (8,8) # (7,7), (7,8), (8,7), (8,8)
-        self.mouse = Mouse(self.start, self.target, WallDetector(self.maze))
+        self.mouse = Mouse(self.start, WallDetector(self.maze))
 
         self._running = True
         self._display_surf = None
@@ -374,9 +465,10 @@ class App():
         if self._counter > self._delay:
             logging.info("tick")
             self._counter = 0
-            self.mouse.tick()
             if self._complete is False:
-                pass
+                self.mouse.tick()
+                if self.mouse.complete():
+                    self._complete = True
     def on_render(self) -> None:
         """On render."""
         self._display_surf.fill((0,0,0))
@@ -420,7 +512,6 @@ class App():
                     pygame.draw.line(self._display_surf, colour, (mleft,mbot), (mleft,mtop), thickness)
 
         self.mouse.draw(self._display_surf)
-        pygame.draw.circle(self._display_surf, (255,255,255), (((self.target[0]*CELL_SIZE)*SCALE)+(CELL_SIZE*SCALE)/2, ((self.target[1]*CELL_SIZE)*SCALE)+(CELL_SIZE*SCALE)/2), 5*SCALE, 1)
         
         for r in range(len(self.mouse.flood)):
             for c in range(len(self.mouse.flood[r])):
