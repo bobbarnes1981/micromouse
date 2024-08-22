@@ -3,13 +3,16 @@ import logging
 import pygame
 import time
 
-
 NORTH_MASK = 0x01
 EAST_MASK = 0x02
 SOUTH_MASK = 0x04
 WEST_MASK = 0x08
+CELL_SIZE = 18
+MAZE_X = 16
+MAZE_Y = 16
 
 class Maze():
+    """Represents the physical maze"""
     def __init__(self):
         self.cells = [
             [0x09,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x03],
@@ -30,18 +33,41 @@ class Maze():
             [0x0E,0x0C,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x06],
         ]
 
+class Mouse():
+    """Represetns the micromouse"""
+    def __init__(self, location, target):
+        self.location = location
+        self.target = target
+        self.facing = NORTH_MASK
+        self.width = 8
+        self.height = 10
+    def draw(self, surface):
+        if self.facing == NORTH_MASK:
+            l = (self.location[0] * CELL_SIZE) + ((CELL_SIZE - self.width) / 2)
+            t = (self.location[1] * CELL_SIZE) + ((CELL_SIZE - self.height) / 2)
+            w = self.width
+            h = self.height
+        if self.facing == EAST_MASK:
+            pass
+        if self.facing == SOUTH_MASK:
+            pass
+        if self.facing == WEST_MASK:
+            pass
+        pygame.draw.rect(surface, (255,255,255), pygame.Rect((l,t), (w,h)), 0)
+
 class App():
+    """Runs the simulation, curently attempt to simulate mouse maze mapping and floodfill, we are ignoring mouse navigation"""
     def __init__(self):
         self._delay = 1
 
-        self._cell_size = 18
-        maze_x = 16
-        maze_y = 16
+        self.start = (0,15)
+        self.target = (8,8) # (7,7), (7,8), (8,7), (8,8)
+        self.mouse = Mouse(self.start, self.target)
 
         self._running = True
         self._display_surf = None
-        self._width = self._cell_size * maze_x
-        self._height = self._cell_size * maze_y
+        self._width = CELL_SIZE * MAZE_X
+        self._height = CELL_SIZE * MAZE_Y
         self._size = (self._width, self._height)
         self._time = time.time()
         self._counter = 0
@@ -82,10 +108,10 @@ class App():
         self._display_surf.fill((0,0,0))
         for r in range(0, len(self.maze.cells)):
             for c in range(0, len(self.maze.cells[r])):
-                left = c*self._cell_size
-                right = ((c*self._cell_size)+self._cell_size)-1
-                top = r*self._cell_size
-                bot = ((r*self._cell_size)+self._cell_size)-1
+                left = c*CELL_SIZE
+                right = ((c*CELL_SIZE)+CELL_SIZE)-1
+                top = r*CELL_SIZE
+                bot = ((r*CELL_SIZE)+CELL_SIZE)-1
                 thickness = 1
 
                 if (self.maze.cells[r][c] & NORTH_MASK) == NORTH_MASK:
@@ -100,6 +126,8 @@ class App():
                 if (self.maze.cells[r][c] & WEST_MASK) == WEST_MASK:
                     colour = (0,0,255)
                     pygame.draw.line(self._display_surf, colour, (left,bot), (left,top), thickness)
+        self.mouse.draw(self._display_surf)
+        pygame.draw.circle(self._display_surf, (255,255,255), ((self.target[0]*CELL_SIZE)+CELL_SIZE/2, (self.target[1]*CELL_SIZE)+CELL_SIZE/2), 5, 1)
 
         pygame.display.update()
     def on_cleanup(self) -> None:
