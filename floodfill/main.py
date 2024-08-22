@@ -207,19 +207,20 @@ class Mouse():
                     print(f"east is {num}")
                     directions.append({'value': num, 'coord':(x,y)})
             # check south
-            x = self.location[0]
-            y = self.location[1]+1
-            #print(x,y)
-            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
-                print("checking south")
-                if not self.wall_south():
-                    num = self.flood[y][x]
-                    print(f"south is {num}")
-                    directions.append({'value': num, 'coord':(x,y)})
+            #x = self.location[0]
+            #y = self.location[1]+1
+            ##print(x,y)
+            #if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
+            #    print("checking south")
+            #    if not self.wall_south():
+            #        num = self.flood[y][x]
+            #        print(f"south is {num}")
+            #        directions.append({'value': num, 'coord':(x,y)})
             if len(directions) == 0:
                 raise Exception("No direction")
             directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
             self.location = directions[0]['coord']
+            raise Exception("TODO: turn to face direction")
         if self.facing == EAST_MASK:
             pass
         if self.facing == SOUTH_MASK:
@@ -246,7 +247,7 @@ class Mouse():
 class App():
     """Runs the simulation, curently attempt to simulate mouse maze mapping and floodfill, we are ignoring mouse navigation"""
     def __init__(self):
-        self._delay = 1
+        self._delay = 0.5
 
         self.maze = Maze()
         self.maze.validate()
