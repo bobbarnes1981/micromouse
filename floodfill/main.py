@@ -91,6 +91,7 @@ class Mouse():
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
         ]
+        # TODO: maybe generate this using algorithm?
         self.flood = [
             [14,13,12,11,10, 9, 8, 7, 7, 8, 9,10,11,12,13,14],
             [13,12,11,10, 9, 8, 7, 6, 6, 7, 8, 9,10,11,12,13],
@@ -110,16 +111,20 @@ class Mouse():
             [14,13,12,11,10, 9, 8, 7, 7, 8, 9,10,11,12,13,14],
         ]
     def draw(self, surface):
+        cl = self.location[0] * CELL_SIZE * SCALE
+        ct = self.location[1] * CELL_SIZE * SCALE
+        cr = cl + (CELL_SIZE*SCALE)
+        cb = ct + (CELL_SIZE*SCALE)
         if self.facing == NORTH_MASK:
-            l = (self.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.width*SCALE) / 2)
-            t = (self.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.height*SCALE) / 2)
+            l = (cl) + ((self.width*SCALE) / 2)
+            t = (ct) + ((self.height*SCALE) / 2)
             w = self.width*SCALE
             h = self.height*SCALE
             d = 5 * SCALE
             if self.state == MOUSE_STATE_CHECK:
-                pygame.draw.line(surface, (255,255,255), (l,t), (l-d,t-d), 1)
-                pygame.draw.line(surface, (255,255,255), (l+(w/2),t), (l+(w/2),t-d), 1)
-                pygame.draw.line(surface, (255,255,255), (l+w,t), (l+w+d,t-d), 1)
+                pygame.draw.line(surface, (255,255,255), (cl,ct), (cl+d,ct+d), 1)
+                pygame.draw.line(surface, (255,255,255), (cl+(CELL_SIZE*SCALE/2),ct), (cl+(CELL_SIZE*SCALE/2),ct+d), 1)
+                pygame.draw.line(surface, (255,255,255), (cr,ct), (cr-d,ct+d), 1)
         if self.facing == EAST_MASK:
             l = (self.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.height*SCALE) / 2)
             t = (self.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.width*SCALE) / 2)
@@ -127,13 +132,23 @@ class Mouse():
             h = self.width*SCALE
             d = 5 * SCALE
             if self.state == MOUSE_STATE_CHECK:
-                pygame.draw.line(surface, (255,255,255), (l+(w/2),t), (l+(w/2)+d,t-d), 1)
-                pygame.draw.line(surface, (255,255,255), (l+(w/2),t+(h/2)), (l+(CELL_SIZE*SCALE)-d,t+(h/2)), 1)
-                pygame.draw.line(surface, (255,255,255), (l+(w/2),t+h), (l+(w/2)+d,t+(w/2)+d), 1)
+                pass
         if self.facing == SOUTH_MASK:
-            raise Exception("not implemented")
+            l = (self.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.width*SCALE) / 2)
+            t = (self.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.height*SCALE) / 2)
+            w = self.width*SCALE
+            h = self.height*SCALE
+            d = 5 * SCALE
+            if self.state == MOUSE_STATE_CHECK:
+                pass
         if self.facing == WEST_MASK:
-            raise Exception("not implemented")
+            l = (self.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.height*SCALE) / 2)
+            t = (self.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.width*SCALE) / 2)
+            w = self.height*SCALE
+            h = self.width*SCALE
+            d = 5 * SCALE
+            if self.state == MOUSE_STATE_CHECK:
+                pass
         if self.state == MOUSE_STATE_CHECK:
             colour = (255,0,0)
         if self.state == MOUSE_STATE_UPDATE:
@@ -163,9 +178,13 @@ class Mouse():
             self.scan_east()
             self.scan_south()
         if self.facing == SOUTH_MASK:
-            raise Exception("not implemented")
+            self.scan_east()
+            self.scan_south()
+            self.scan_west()
         if self.facing == WEST_MASK:
-            raise Exception("not implemented")
+            self.scan_south()
+            self.scan_west()
+            self.scan_north()
     def update(self):
         logging.debug("update map")
         # do floodfill thing
@@ -194,13 +213,32 @@ class Mouse():
             if dir:
                 directions.append(dir)
         if self.facing == SOUTH_MASK:
-            raise Exception("not implemented")
+            dir = self.check_east()
+            if dir:
+                directions.append(dir)
+            dir = self.check_south()
+            if dir:
+                directions.append(dir)
+            dir = self.check_west()
+            if dir:
+                directions.append(dir)
         if self.facing == WEST_MASK:
-            raise Exception("not implemented")
+            dir = self.check_south()
+            if dir:
+                directions.append(dir)
+            dir = self.check_west()
+            if dir:
+                directions.append(dir)
+            dir = self.check_north()
+            if dir:
+                directions.append(dir)
         if len(directions) == 0:
             raise Exception("No direction")
+        # TODO: if smallest number behind wall then re-flood
         directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
         direction = directions[0]
+        if direction['acc'] == False:
+            raise Exception("Smallest number not accessible")
         if direction['dir'] != self.facing:
             self.facing = direction['dir']
         self.location = direction['coord']
@@ -235,10 +273,9 @@ class Mouse():
         #print(x,y)
         if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
             print("checking north")
-            if not self.wall_north():
-                num = self.flood[y][x]
-                print(f"north is {num}")
-                return {'value': num, 'coord':(x,y), 'dir':NORTH_MASK}
+            num = self.flood[y][x]
+            print(f"north is {num}")
+            return {'value': num, 'coord':(x,y), 'dir':NORTH_MASK, 'acc':not self.wall_north()}
         return None
     def check_east(self):
         # check east
@@ -247,10 +284,9 @@ class Mouse():
         #print(x,y)
         if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
             print("checking east")
-            if not self.wall_east():
-                num = self.flood[y][x]
-                print(f"east is {num}")
-                return {'value': num, 'coord':(x,y), 'dir':EAST_MASK}
+            num = self.flood[y][x]
+            print(f"east is {num}")
+            return {'value': num, 'coord':(x,y), 'dir':EAST_MASK, 'acc':not self.wall_east()}
         return None
     def check_south(self):
         # check south
@@ -259,10 +295,9 @@ class Mouse():
         #print(x,y)
         if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
             print("checking south")
-            if not self.wall_south():
-                num = self.flood[y][x]
-                print(f"south is {num}")
-                return {'value': num, 'coord':(x,y), 'dir':SOUTH_MASK}
+            num = self.flood[y][x]
+            print(f"south is {num}")
+            return {'value': num, 'coord':(x,y), 'dir':SOUTH_MASK, 'acc':not self.wall_south()}
         return None
     def check_west(self):
         # check west
@@ -271,10 +306,9 @@ class Mouse():
         #print(x,y)
         if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y:
             print("checking west")
-            if not self.wall_west():
-                num = self.flood[y][x]
-                print(f"west is {num}")
-                return {'value': num, 'coord':(x,y), 'dir':WEST_MASK}
+            num = self.flood[y][x]
+            print(f"west is {num}")
+            return {'value': num, 'coord':(x,y), 'dir':WEST_MASK, 'acc':not self.wall_west()}
         return None
     def detected_north(self):
         return (self.cells[self.location[1]][self.location[0]] & NORTH_MASK<<4) == NORTH_MASK<<4
@@ -296,7 +330,7 @@ class Mouse():
 class App():
     """Runs the simulation, curently attempt to simulate mouse maze mapping and floodfill, we are ignoring mouse navigation"""
     def __init__(self):
-        self._delay = 0.5
+        self._delay = 0.3
 
         self.maze = Maze()
         self.maze.validate()
