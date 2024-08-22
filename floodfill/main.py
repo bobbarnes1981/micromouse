@@ -7,6 +7,8 @@ NORTH_MASK = 0x01
 EAST_MASK = 0x02
 SOUTH_MASK = 0x04
 WEST_MASK = 0x08
+
+SCALE = 2
 CELL_SIZE = 18
 MAZE_X = 16
 MAZE_Y = 16
@@ -52,14 +54,14 @@ class Maze():
 class WallDetector():
     def __init__(self, maze):
         self.maze = maze
-    def north(self):
-        pass
-    def east(self):
-        pass
-    def south(self):
-        pass
-    def west(self):
-        pass
+    def north(self, x, y):
+        return (self.maze.cells[y][x] & NORTH_MASK) == NORTH_MASK
+    def east(self, x, y):
+        return (self.maze.cells[y][x] & EAST_MASK) == EAST_MASK
+    def south(self, x, y):
+        return (self.maze.cells[y][x] & SOUTH_MASK) == SOUTH_MASK
+    def west(self, x, y):
+        return (self.maze.cells[y][x] & WEST_MASK) == WEST_MASK
 
 class Mouse():
     """Represents the micromouse"""
@@ -87,7 +89,7 @@ class Mouse():
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
-            [0x0F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
+            [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
         ]
     def draw(self, surface):
         if self.facing == NORTH_MASK:
@@ -126,10 +128,21 @@ class Mouse():
     def check(self):
         logging.debug("check for walls")
         if self.facing == NORTH_MASK:
-            # check three directions
-            # get current state
-            # if not set, try to detect
-            pass
+            if not self.detected_west():
+                print('checking w')
+                self.cells[self.location[1]][self.location[0]] |= WEST_MASK<<4
+                if self.wall_detector.west(self.location[0], self.location[1]):
+                    self.cells[self.location[1]][self.location[0]] |= WEST_MASK
+            if not self.detected_north():
+                print('checking n')
+                self.cells[self.location[1]][self.location[0]] |= NORTH_MASK<<4
+                if self.wall_detector.north(self.location[0], self.location[1]):
+                    self.cells[self.location[1]][self.location[0]] |= NORTH_MASK
+            if not self.detected_east():
+                print('checking e')
+                self.cells[self.location[1]][self.location[0]] |= EAST_MASK<<4
+                if self.wall_detector.east(self.location[0], self.location[1]):
+                    self.cells[self.location[1]][self.location[0]] |= EAST_MASK
         if self.facing == EAST_MASK:
             pass
         if self.facing == SOUTH_MASK:
@@ -142,16 +155,32 @@ class Mouse():
         pass
     def move(self):
         logging.debug("move")
-        # choose where to move next
-        pass
-    def north(self):
-        return (self.cells[self.location[1],self.location[0]] & NORTH_MASK) == NORTH_MASK
-    def east(self):
-        return (self.cells[self.location[1],self.location[0]] & EAST_MASK) == EAST_MASK
-    def south(self):
-        return (self.cells[self.location[1],self.location[0]] & SOUTH_MASK) == SOUTH_MASK
-    def west(self):
-        return (self.cells[self.location[1],self.location[0]] & WEST_MASK) == WEST_MASK
+        # dumb algorithm
+        if self.facing == NORTH_MASK:
+            if not self.wall_north():
+                self.location = (self.location[0], self.location[1]-1)
+        if self.facing == EAST_MASK:
+            pass
+        if self.facing == SOUTH_MASK:
+            pass
+        if self.facing == WEST_MASK:
+            pass
+    def detected_north(self):
+        return (self.cells[self.location[1]][self.location[0]] & NORTH_MASK<<4) == NORTH_MASK<<4
+    def detected_east(self):
+        return (self.cells[self.location[1]][self.location[0]] & EAST_MASK<<4) == EAST_MASK<<4
+    def detected_south(self):
+        return (self.cells[self.location[1]][self.location[0]] & SOUTH_MASK<<4) == SOUTH_MASK<<4
+    def detected_west(self):
+        return (self.cells[self.location[1]][self.location[0]] & WEST_MASK<<4) == WEST_MASK<<4
+    def wall_north(self):
+        return (self.cells[self.location[1]][self.location[0]] & NORTH_MASK) == NORTH_MASK
+    def wall_east(self):
+        return (self.cells[self.location[1]][self.location[0]] & EAST_MASK) == EAST_MASK
+    def wall_south(self):
+        return (self.cells[self.location[1]][self.location[0]] & SOUTH_MASK) == SOUTH_MASK
+    def wall_west(self):
+        return (self.cells[self.location[1]][self.location[0]] & WEST_MASK) == WEST_MASK
 
 class App():
     """Runs the simulation, curently attempt to simulate mouse maze mapping and floodfill, we are ignoring mouse navigation"""
