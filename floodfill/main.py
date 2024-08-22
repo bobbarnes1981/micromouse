@@ -91,16 +91,35 @@ class Mouse():
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
         ]
+        self.flood = [
+            [14,13,12,11,10, 9, 8, 7, 7, 8, 9,10,11,12,13,14],
+            [13,12,11,10, 9, 8, 7, 6, 6, 7, 8, 9,10,11,12,13],
+            [12,11,10, 9, 8, 7, 6, 5, 5, 6, 7, 8, 9,10,11,12],
+            [11,10, 9, 8, 7, 6, 5, 4, 4, 5, 6, 7, 8, 9,10,11],
+            [10, 9, 8, 7, 6, 5, 4, 3, 3, 4, 5, 6, 7, 8, 9,10],
+            [ 9, 8, 7, 6, 5, 4, 3, 2, 2, 3, 4, 5, 6, 7, 8, 9],
+            [ 8, 7, 6, 5, 4, 3, 2, 1, 1, 2, 3, 4, 5, 6, 7, 8],
+            [ 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7],
+            [ 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7],
+            [ 8, 7, 6, 5, 4, 3, 2, 1, 1, 2, 3, 4, 5, 6, 7, 8],
+            [ 9, 8, 7, 6, 5, 4, 3, 2, 2, 3, 4, 5, 6, 7, 8, 9],
+            [10, 9, 8, 7, 6, 5, 4, 3, 3, 4, 5, 6, 7, 8, 9,10],
+            [11,10, 9, 8, 7, 6, 5, 4, 4, 5, 6, 7, 8, 9,10,11],
+            [12,11,10, 9, 8, 7, 6, 5, 5, 6, 7, 8, 9,10,11,12],
+            [13,12,11,10, 9, 8, 7, 6, 6, 7, 8, 9,10,11,12,13],
+            [14,13,12,11,10, 9, 8, 7, 7, 8, 9,10,11,12,13,14],
+        ]
     def draw(self, surface):
         if self.facing == NORTH_MASK:
-            l = (self.location[0] * CELL_SIZE) + ((CELL_SIZE - self.width) / 2)
-            t = (self.location[1] * CELL_SIZE) + ((CELL_SIZE - self.height) / 2)
-            w = self.width
-            h = self.height
+            l = (self.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.width*SCALE) / 2)
+            t = (self.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.height*SCALE) / 2)
+            w = self.width*SCALE
+            h = self.height*SCALE
+            d = 5 * SCALE
             if self.state == MOUSE_STATE_CHECK:
-                pygame.draw.line(surface, (255,255,255), (l,t), (l-5,t-5), 1)
-                pygame.draw.line(surface, (255,255,255), (l+(self.width/2),t), (l+(self.width/2),t-5), 1)
-                pygame.draw.line(surface, (255,255,255), (l+self.width,t), (l+self.width+5,t-5), 1)
+                pygame.draw.line(surface, (255,255,255), (l,t), (l-d,t-d), 1)
+                pygame.draw.line(surface, (255,255,255), (l+(w/2),t), (l+(w/2),t-d), 1)
+                pygame.draw.line(surface, (255,255,255), (l+w,t), (l+w+d,t-d), 1)
         if self.facing == EAST_MASK:
             pass
         if self.facing == SOUTH_MASK:
@@ -196,8 +215,8 @@ class App():
 
         self._running = True
         self._display_surf = None
-        self._width = CELL_SIZE * MAZE_X
-        self._height = CELL_SIZE * MAZE_Y
+        self._width = CELL_SIZE * MAZE_X * SCALE
+        self._height = CELL_SIZE * MAZE_Y * SCALE
         self._size = (self._width, self._height)
         self._time = time.time()
         self._counter = 0
@@ -237,10 +256,10 @@ class App():
         self._display_surf.fill((0,0,0))
         for r in range(self.maze.rows()):
             for c in range(self.maze.cols()):
-                left = c*CELL_SIZE
-                right = ((c*CELL_SIZE)+CELL_SIZE)-1
-                top = r*CELL_SIZE
-                bot = ((r*CELL_SIZE)+CELL_SIZE)-1
+                left = c*CELL_SIZE*SCALE
+                right = (((c*CELL_SIZE)+CELL_SIZE)*SCALE)-1
+                top = r*CELL_SIZE*SCALE
+                bot = (((r*CELL_SIZE)+CELL_SIZE)*SCALE)-1
                 thickness = 1
 
                 if (self.maze.cells[r][c] & NORTH_MASK) == NORTH_MASK:
@@ -275,7 +294,7 @@ class App():
                     pygame.draw.line(self._display_surf, colour, (mleft,mbot), (mleft,mtop), thickness)
 
         self.mouse.draw(self._display_surf)
-        pygame.draw.circle(self._display_surf, (255,255,255), ((self.target[0]*CELL_SIZE)+CELL_SIZE/2, (self.target[1]*CELL_SIZE)+CELL_SIZE/2), 5, 1)
+        pygame.draw.circle(self._display_surf, (255,255,255), (((self.target[0]*CELL_SIZE)*SCALE)+(CELL_SIZE*SCALE)/2, ((self.target[1]*CELL_SIZE)*SCALE)+(CELL_SIZE*SCALE)/2), 5*SCALE, 1)
 
         pygame.display.update()
     def on_cleanup(self) -> None:
