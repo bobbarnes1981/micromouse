@@ -406,35 +406,41 @@ class App():
             t = (ct) + (CELL_SIZE*SCALE/2) - (self.mouse.height*SCALE/2)
             w = self.mouse.width*SCALE
             h = self.mouse.height*SCALE
-        #    d = 5 * SCALE
-        #    if self.mouse.state == MOUSE_STATE_SCAN:
-        #        pygame.draw.line(self._display_surf, (255,255,255), (cl,ct), (cl+d,ct+d), 1)
-        #        pygame.draw.line(self._display_surf, (255,255,255), (cl+(CELL_SIZE*SCALE/2),ct), (cl+(CELL_SIZE*SCALE/2),ct+d), 1)
-        #        pygame.draw.line(self._display_surf, (255,255,255), (cr,ct), (cr-d,ct+d), 1)
+            d = 5 * SCALE
+            if self.mouse.state == MOUSE_STATE_SCAN:
+                pygame.draw.line(self._display_surf, (255,255,255), (cl,ct), (cl+d,ct+d), 1)
+                pygame.draw.line(self._display_surf, (255,255,255), (cl+(CELL_SIZE*SCALE/2),ct), (cl+(CELL_SIZE*SCALE/2),ct+d), 1)
+                pygame.draw.line(self._display_surf, (255,255,255), (cr,ct), (cr-d,ct+d), 1)
         if self.mouse.facing == EAST_MASK:
             l = (cl) + (CELL_SIZE*SCALE/2) - (self.mouse.height*SCALE/2)
             t = (ct) + (CELL_SIZE*SCALE/2) - (self.mouse.width*SCALE/2)
             w = self.mouse.height*SCALE
             h = self.mouse.width*SCALE
-        #    d = 5 * SCALE
-        #    if self.mouse.state == MOUSE_STATE_CHECK:
-        #        pass
+            d = 5 * SCALE
+            if self.mouse.state == MOUSE_STATE_SCAN:
+                pygame.draw.line(self._display_surf, (255,255,255), (cr,ct), (cr-d,ct+d), 1)
+                pygame.draw.line(self._display_surf, (255,255,255), (cr,ct+(CELL_SIZE*SCALE/2)), (cr-d,ct+(CELL_SIZE*SCALE/2)), 1)
+                pygame.draw.line(self._display_surf, (255,255,255), (cr,cb), (cr-d,cb-d), 1)
         if self.mouse.facing == SOUTH_MASK:
             l = (cl) + (CELL_SIZE*SCALE/2) - (self.mouse.width*SCALE/2)
             t = (ct) + (CELL_SIZE*SCALE/2) - (self.mouse.height*SCALE/2)
             w = self.mouse.width*SCALE
             h = self.mouse.height*SCALE
-        #    d = 5 * SCALE
-        #    if self.mouse.state == MOUSE_STATE_CHECK:
-        #        pass
+            d = 5 * SCALE
+            if self.mouse.state == MOUSE_STATE_SCAN:
+                pygame.draw.line(self._display_surf, (255,255,255), (cl,cb), (cl+d,cb-d), 1)
+                pygame.draw.line(self._display_surf, (255,255,255), (cl+(CELL_SIZE*SCALE/2),cb), (cl+(CELL_SIZE*SCALE/2),cb-d), 1)
+                pygame.draw.line(self._display_surf, (255,255,255), (cr,cb), (cr-d,cb-d), 1)
         if self.mouse.facing == WEST_MASK:
             l = (cl) + (CELL_SIZE*SCALE/2) - (self.mouse.height*SCALE/2)
             t = (ct) + (CELL_SIZE*SCALE/2) - (self.mouse.width*SCALE/2)
             w = self.mouse.height*SCALE
             h = self.mouse.width*SCALE
-        #    d = 5 * SCALE
-        #    if self.mouse.state == MOUSE_STATE_CHECK:
-        #        pass
+            d = 5 * SCALE
+            if self.mouse.state == MOUSE_STATE_SCAN:
+                pygame.draw.line(self._display_surf, (255,255,255), (cl,ct), (cl+d,ct+d), 1)
+                pygame.draw.line(self._display_surf, (255,255,255), (cl,ct+(CELL_SIZE*SCALE/2)), (cl+d,ct+(CELL_SIZE*SCALE/2)), 1)
+                pygame.draw.line(self._display_surf, (255,255,255), (cl,cb), (cl+d,cb-d), 1)
         if self.mouse.state == MOUSE_STATE_SCAN:
             colour = (255,0,0)
         if self.mouse.state == MOUSE_STATE_FLOOD:
