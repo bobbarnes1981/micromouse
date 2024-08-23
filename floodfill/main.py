@@ -21,6 +21,12 @@ MOUSE_STATE_SCAN = 1
 MOUSE_STATE_FLOOD = 2
 MOUSE_STATE_MOVE = 3
 
+MOUSE_MODE_SEARCH_1 = 1
+MOUSE_MODE_RETURN_TO_START_1 = 2
+MOUSE_MODE_SEARCH_2 = 3
+MOUSE_MODE_RETURN_TO_START_2 = 4
+MOUSE_MODE_FAST_RUN = 5
+
 FLOOD_EMPTY = -1
 
 MAZE_X = 16
@@ -72,6 +78,7 @@ class Mouse():
         self.location = (0,0)
         self.facing = NORTH_MASK
         self.state = MOUSE_STATE_SCAN
+        self.mode = MOUSE_MODE_SEARCH_1
         self.cells = [
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
@@ -109,8 +116,9 @@ class Mouse():
             [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
         ]
         self.queue = []
-        self.start_targets = [[0,0]]
-        self.goal_targets = [[7,7],[7,8],[8,7],[8,8]]
+        self.start_target = (0,0)
+        self.goal_targets = [(7,7),(7,8),(8,7),(8,8)]
+        self.current_origin = self.start_target
         self.current_targets = self.goal_targets
     def flood_map(self, targets: list[tuple]):
         # clear
@@ -160,6 +168,117 @@ class Mouse():
         elif self.state == MOUSE_STATE_MOVE:
             self.move()
             self.state = MOUSE_STATE_SCAN
+        if self.mode == MOUSE_MODE_SEARCH_1:
+            print('search 1')
+            if grid_coord_get(self.flood, self.location[0], self.location[1]) == 0:
+                self.mode = MOUSE_MODE_RETURN_TO_START_1
+                self.current_origin = self.location
+                self.current_targets = [self.start_target]
+                self.flood_map(self.current_targets)
+        elif self.mode == MOUSE_MODE_RETURN_TO_START_1:
+            print('return to start 1')
+            if grid_coord_get(self.flood, self.location[0], self.location[1]) == 0:
+                self.mode = MOUSE_MODE_SEARCH_2
+                self.current_origin = self.start_target
+                self.current_targets = self.goal_targets
+                self.flood_map(self.current_targets)
+        elif self.mode == MOUSE_MODE_SEARCH_2:
+            print('search 2')
+            if grid_coord_get(self.flood, self.location[0], self.location[1]) == 0:
+                self.mode = MOUSE_MODE_RETURN_TO_START_2
+                self.current_origin = self.location
+                self.current_targets = [self.start_target]
+                self.flood_map(self.current_targets)
+        elif self.mode == MOUSE_MODE_RETURN_TO_START_2:
+            print('return to start 2')
+            if grid_coord_get(self.flood, self.location[0], self.location[1]) == 0:
+                self.mode = MOUSE_MODE_FAST_RUN
+                self.current_origin = self.start_target
+                self.current_targets = self.goal_targets
+                self.flood_map(self.current_targets)
+        elif self.mode == MOUSE_MODE_FAST_RUN:
+            print('fast run')
+            # TODO: should use optimal route
+            pass
+    def get_routes_for_current_origin(self):
+        routes = self.get_routes(self.current_origin, 0, 8)
+        filtered_routes = []
+        # check for completed routes
+        for route in routes:
+            coord = route['route'][-1]
+            if grid_coord_get(self.flood, coord[0], coord[1]) == 0:
+                filtered_routes.append(route)
+        if len(filtered_routes) == 0:
+            # no completed routes
+            return [r['route'] for r in routes]
+        elif len(filtered_routes) == 1:
+            # single complete route
+            return [r['route'] for r in filtered_routes]
+        else:
+            # multiple complete routes
+            filtered_routes.sort(key=lambda x: x['score'], reverse=False) # sort ascending
+            return [filtered_routes[0]['route']]
+    def get_routes(self, origin, depth, limit):
+        routes = []
+        route = []
+        current_loc = origin
+        current_dir = None
+        current_score = 0
+        required_val = grid_coord_get(self.flood, current_loc[0], current_loc[1])
+        while current_loc:
+            route.append(current_loc)
+            directions = self.get_directions(current_loc[0], current_loc[1])
+            required_val = required_val - 1
+            if len(directions) == 0:
+                # no directions
+                current_loc = None
+                current_dir = None
+                routes.append({'score':current_score,'route':route})
+            elif len(directions) == 1:
+                # single direction
+                if directions[0]['value'] == required_val:
+                    # correct value
+                    current_loc = directions[0]['coord']
+                    if current_dir != directions[0]['dir']:
+                        current_score+=1
+                    current_dir = directions[0]['dir']
+                else:
+                    # wrong value
+                    current_loc = None
+                    current_dir = None
+                    routes.append({'score':current_score,'route':route})
+            else:
+                # multiple directions
+                if directions[0]['value'] == directions[1]['value']:
+                    # multiple routes
+                    if depth < limit and directions[0]['value'] == required_val:
+                        current_loc = None
+                        current_dir = None
+                        # correct value
+                        for direction in directions:
+                            if directions[0]['value'] == direction['value']:
+                                sub_routes = self.get_routes(direction['coord'], depth+1, limit)
+                                for sub_route in sub_routes:
+                                    routes.append({'score':current_score+sub_route['score'],'route':route+sub_route['route']})
+                    else:
+                        # wrong value
+                        current_loc = None
+                        current_dir = None
+                        routes.append({'score':current_score,'route':route})
+                else:
+                    # single route
+                    if directions[0]['value'] == required_val:
+                        # correct value
+                        current_loc = directions[0]['coord']
+                        if current_dir != directions[0]['dir']:
+                            current_score+=1
+                        current_dir = directions[0]['dir']
+                    else:
+                        # wrong value
+                        current_loc = None
+                        current_dir = None
+                        routes.append({'score':current_score,'route':route})
+        return routes
     def scan(self):
         logging.debug("check for walls")
         if self.facing == NORTH_MASK:
@@ -178,33 +297,33 @@ class Mouse():
             self.scan_south(self.location[0], self.location[1])
             self.scan_west(self.location[0], self.location[1])
             self.scan_north(self.location[0], self.location[1])
-    def move(self):
-        logging.debug("move")
+    def get_directions(self, x: int, y: int):
         directions = []
-        dir = self.check_north()
+        dir = self.check_north(x, y)
         if dir:
             directions.append(dir)
-        dir = self.check_east()
+        dir = self.check_east(x, y)
         if dir:
             directions.append(dir)
-        dir = self.check_south()
+        dir = self.check_south(x, y)
         if dir:
             directions.append(dir)
-        dir = self.check_west()
+        dir = self.check_west(x, y)
         if dir:
             directions.append(dir)
         if len(directions) == 0:
             raise Exception("No direction")
         directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
+        return directions
+    def move(self):
+        logging.debug("move")
+        directions = self.get_directions(self.location[0], self.location[1])
         direction = directions[0]
         if direction['dir'] != self.facing:
             self.facing = direction['dir']
         self.location = direction['coord']
-        # TODO: how to explore rest of maze once we find the target? set target to start or even unexplored cells
-        # TODO: split mouse logic from rendering code
     def scan_north(self, x: int, y :int):
         if grid_coord_get(self.cells, x, y) & NORTH_CHECKED_MASK != NORTH_CHECKED_MASK:
-            print('scanning north')
             _x = x
             _y = y+1
             grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | NORTH_CHECKED_MASK)
@@ -216,7 +335,6 @@ class Mouse():
                     grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | SOUTH_MASK)
     def scan_east(self, x: int, y: int):
         if grid_coord_get(self.cells, x, y) & EAST_CHECKED_MASK != EAST_CHECKED_MASK:
-            print('scanning east')
             _x = x+1
             _y = y
             grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | EAST_CHECKED_MASK)
@@ -228,7 +346,6 @@ class Mouse():
                     grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | WEST_MASK)
     def scan_south(self, x: int, y :int):
         if grid_coord_get(self.cells, x, y) & SOUTH_CHECKED_MASK != SOUTH_CHECKED_MASK:
-            print('scanning south')
             _x = x
             _y = y-1
             grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | SOUTH_CHECKED_MASK)
@@ -240,7 +357,6 @@ class Mouse():
                     grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | NORTH_MASK)
     def scan_west(self, x: int, y: int):
         if grid_coord_get(self.cells, x, y) & WEST_CHECKED_MASK != WEST_CHECKED_MASK:
-            print('scanning west')
             _x = x-1
             _y = y
             grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | WEST_CHECKED_MASK)
@@ -250,52 +366,36 @@ class Mouse():
                 grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | WEST_MASK)
                 if grid_coord_valid(self.cells, _x, _y):
                     grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | EAST_MASK)
-    def check_north(self):
+    def check_north(self, x: int, y: int):
         # check north
-        x = self.location[0]
-        y = self.location[1]
         _x = x
         _y = y+1
-        if grid_coord_valid(self.cells, _x, _y) and not self.wall_north(x,y):
-            print("checking north")
+        if grid_coord_valid(self.cells, _x, _y) and not self.wall_north(x,y): # TODO: do we need to check walls?
             num = grid_coord_get(self.flood, _x, _y)
-            print(f"north is {num}")
             return {'value': num, 'coord':(_x,_y), 'dir':NORTH_MASK}
         return None
-    def check_east(self):
+    def check_east(self, x: int, y: int):
         # check east
-        x = self.location[0]
-        y = self.location[1]
         _x = x+1
         _y = y
-        if grid_coord_valid(self.cells, _x, _y) and not self.wall_east(x,y):
-            print("checking east")
+        if grid_coord_valid(self.cells, _x, _y) and not self.wall_east(x,y): # TODO: do we need to check walls?
             num = grid_coord_get(self.flood, _x, _y)
-            print(f"east is {num}")
             return {'value': num, 'coord':(_x,_y), 'dir':EAST_MASK}
         return None
-    def check_south(self):
+    def check_south(self, x: int, y: int):
         # check south
-        x = self.location[0]
-        y = self.location[1]
         _x = x
         _y = y-1
-        if grid_coord_valid(self.cells, _x, _y) and not self.wall_south(x,y):
-            print("checking south")
+        if grid_coord_valid(self.cells, _x, _y) and not self.wall_south(x,y): # TODO: do we need to check walls?
             num = grid_coord_get(self.flood, _x, _y)
-            print(f"south is {num}")
             return {'value': num, 'coord':(_x,_y), 'dir':SOUTH_MASK}
         return None
-    def check_west(self):
+    def check_west(self, x: int, y: int):
         # check west
-        x = self.location[0]
-        y = self.location[1]
         _x = x-1
         _y = y
-        if grid_coord_valid(self.cells, _x, _y) and not self.wall_west(x,y):
-            print("checking west")
+        if grid_coord_valid(self.cells, _x, _y) and not self.wall_west(x,y): # TODO: do we need to check walls?
             num = grid_coord_get(self.flood, _x, _y)
-            print(f"west is {num}")
             return {'value': num, 'coord':(_x,_y), 'dir':WEST_MASK}
         return None
     def wall_north(self, x, y):
@@ -455,6 +555,16 @@ class App():
                 num = grid_coord_get(self.mouse.flood, x, y)
                 img = self.font.render(str(num), True, (80,80,80))
                 self._display_surf.blit(img, (x*CELL_SIZE*SCALE, self._height-(y*CELL_SIZE*SCALE)-(CELL_SIZE*SCALE)))
+
+        routes = self.mouse.get_routes_for_current_origin()
+        for route in routes:
+            _r = None
+            for r in route:
+                if _r:
+                    a = ((_r[0]*CELL_SIZE*SCALE)+(CELL_SIZE*SCALE/2),self._height - (_r[1] * CELL_SIZE * SCALE) - (CELL_SIZE*SCALE/2))
+                    b = ((r[0]*CELL_SIZE*SCALE)+(CELL_SIZE*SCALE/2),self._height - (r[1] * CELL_SIZE * SCALE) - (CELL_SIZE*SCALE/2))
+                    pygame.draw.line(self._display_surf, (255,255,255), a, b)
+                _r = r
 
         # render cell coordinates
         #for x in range(grid_x(self.mouse.flood)):
