@@ -169,35 +169,35 @@ class Mouse():
             self.move()
             self.state = MOUSE_STATE_SCAN
         if self.mode == MOUSE_MODE_SEARCH_1:
-            print('search 1')
+            logging.info('search 1')
             if grid_coord_get(self.flood, self.location[0], self.location[1]) == 0:
                 self.mode = MOUSE_MODE_RETURN_TO_START_1
                 self.current_origin = self.location
                 self.current_targets = [self.start_target]
                 self.flood_map(self.current_targets)
         elif self.mode == MOUSE_MODE_RETURN_TO_START_1:
-            print('return to start 1')
+            logging.info('return to start 1')
             if grid_coord_get(self.flood, self.location[0], self.location[1]) == 0:
                 self.mode = MOUSE_MODE_SEARCH_2
                 self.current_origin = self.start_target
                 self.current_targets = self.goal_targets
                 self.flood_map(self.current_targets)
         elif self.mode == MOUSE_MODE_SEARCH_2:
-            print('search 2')
+            logging.info('search 2')
             if grid_coord_get(self.flood, self.location[0], self.location[1]) == 0:
                 self.mode = MOUSE_MODE_RETURN_TO_START_2
                 self.current_origin = self.location
                 self.current_targets = [self.start_target]
                 self.flood_map(self.current_targets)
         elif self.mode == MOUSE_MODE_RETURN_TO_START_2:
-            print('return to start 2')
+            logging.info('return to start 2')
             if grid_coord_get(self.flood, self.location[0], self.location[1]) == 0:
                 self.mode = MOUSE_MODE_FAST_RUN
                 self.current_origin = self.start_target
                 self.current_targets = self.goal_targets
                 self.flood_map(self.current_targets)
         elif self.mode == MOUSE_MODE_FAST_RUN:
-            print('fast run')
+            logging.info('fast run')
             # TODO: should use optimal route
             pass
     def get_routes_for_current_origin(self):
