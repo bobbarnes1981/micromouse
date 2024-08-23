@@ -8,70 +8,70 @@ EAST_MASK = 0x02
 SOUTH_MASK = 0x04
 WEST_MASK = 0x08
 
-SCALE = 2
-CELL_SIZE = 18
-MAZE_X = 16
-MAZE_Y = 16
+NORTH_CHECKED_MASK = 0x10
+EAST_CHECKED_MASK = 0x20
+SOUTH_CHECKED_MASK = 0x40
+WEST_CHECKED_MASK = 0x80
 
-MOUSE_STATE_CHECK = 1
-MOUSE_STATE_UPDATE = 2
+SCALE = 2
+
+CELL_SIZE = 18
+
+MOUSE_STATE_SCAN = 1
+MOUSE_STATE_FLOOD = 2
 MOUSE_STATE_MOVE = 3
 
-class Maze():
-    """Represents the physical maze"""
-    def __init__(self):
-        self.cells = [
-            [0x09,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x03],
-            [0x0A,0x09,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x01,0x05,0x05,0x05,0x05,0x02],
-            [0x0A,0x0A,0x09,0x05,0x05,0x05,0x01,0x05,0x07,0x0D,0x04,0x01,0x05,0x05,0x03,0x0A],
-            [0x0A,0x0A,0x0A,0x0B,0x09,0x03,0x0C,0x05,0x03,0x0B,0x09,0x06,0x09,0x05,0x06,0x0A],
-            [0x0A,0x0A,0x0A,0x08,0x06,0x0A,0x09,0x03,0x0C,0x02,0x0A,0x0D,0x04,0x05,0x03,0x0A],
-            [0x0A,0x0A,0x0A,0x0C,0x03,0x0A,0x0A,0x0C,0x03,0x0C,0x06,0x09,0x05,0x05,0x06,0x0A],
-            [0x0A,0x0A,0x0C,0x05,0x06,0x0A,0x0A,0x0D,0x04,0x05,0x03,0x0C,0x05,0x03,0x0B,0x0A],
-            [0x0A,0x0A,0x09,0x03,0x0D,0x02,0x0A,0x09,0x01,0x03,0x0C,0x05,0x05,0x06,0x0A,0x0A],
-            [0x0A,0x0A,0x0A,0x0C,0x03,0x0A,0x0A,0x0C,0x06,0x0C,0x01,0x07,0x09,0x01,0x02,0x0A],
-            [0x0A,0x0A,0x0A,0x09,0x06,0x08,0x06,0x0D,0x01,0x03,0x0C,0x03,0x0A,0x0E,0x0A,0x0A],
-            [0x0A,0x0A,0x0A,0x0C,0x05,0x06,0x09,0x03,0x0A,0x0C,0x03,0x0C,0x00,0x05,0x02,0x0A],
-            [0x0A,0x0A,0x0C,0x05,0x05,0x03,0x0A,0x0A,0x0C,0x03,0x0C,0x03,0x0C,0x03,0x0A,0x0A],
-            [0x0A,0x0A,0x09,0x05,0x05,0x06,0x0A,0x0A,0x0D,0x04,0x03,0x0C,0x03,0x0C,0x02,0x0A],
-            [0x08,0x02,0x0A,0x0D,0x05,0x05,0x02,0x0A,0x0D,0x05,0x04,0x03,0x0C,0x03,0x0A,0x0A],
-            [0x0A,0x0A,0x0C,0x05,0x05,0x05,0x06,0x0C,0x05,0x05,0x05,0x06,0x0D,0x04,0x06,0x0A],
-            [0x0E,0x0C,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x06],
-        ]
-    def rows(self) -> int:
-        return len(self.cells)
-    def cols(self) -> int:
-        return len(self.cells[0])
-    def validate(self) -> bool:
-        for r in range(self.rows()):
-            for c in range(self.cols()):
-                for y in range(-1, +2):
-                    for x in range(-1, +2):
-                        # TODO: validate cell walls in neighbouring cells
-                        pass
-        return True
+FLOOD_EMPTY = -1
 
-class WallDetector():
-    def __init__(self, maze):
-        self.maze = maze
-    def north(self, x, y):
-        return (self.maze.cells[y][x] & NORTH_MASK) == NORTH_MASK
-    def east(self, x, y):
-        return (self.maze.cells[y][x] & EAST_MASK) == EAST_MASK
-    def south(self, x, y):
-        return (self.maze.cells[y][x] & SOUTH_MASK) == SOUTH_MASK
-    def west(self, x, y):
-        return (self.maze.cells[y][x] & WEST_MASK) == WEST_MASK
+MAZE_X = 16
+MAZE_Y = 16
+MAZE = [
+    [0x09,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x03],
+    [0x0A,0x09,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x01,0x05,0x05,0x05,0x05,0x02],
+    [0x0A,0x0A,0x09,0x05,0x05,0x05,0x01,0x05,0x07,0x0D,0x04,0x01,0x05,0x05,0x03,0x0A],
+    [0x0A,0x0A,0x0A,0x0B,0x09,0x03,0x0C,0x05,0x03,0x0B,0x09,0x06,0x09,0x05,0x06,0x0A],
+    [0x0A,0x0A,0x0A,0x08,0x06,0x0A,0x09,0x03,0x0C,0x02,0x0A,0x0D,0x04,0x05,0x03,0x0A],
+    [0x0A,0x0A,0x0A,0x0C,0x03,0x0A,0x0A,0x0C,0x03,0x0C,0x06,0x09,0x05,0x05,0x06,0x0A],
+    [0x0A,0x0A,0x0C,0x05,0x06,0x0A,0x0A,0x0D,0x04,0x05,0x03,0x0C,0x05,0x03,0x0B,0x0A],
+    [0x0A,0x0A,0x09,0x03,0x0D,0x02,0x0A,0x09,0x01,0x03,0x0C,0x05,0x05,0x06,0x0A,0x0A],
+    [0x0A,0x0A,0x0A,0x0C,0x03,0x0A,0x0A,0x0C,0x06,0x0C,0x01,0x07,0x09,0x01,0x02,0x0A],
+    [0x0A,0x0A,0x0A,0x09,0x06,0x08,0x06,0x0D,0x01,0x03,0x0C,0x03,0x0A,0x0E,0x0A,0x0A],
+    [0x0A,0x0A,0x0A,0x0C,0x05,0x06,0x09,0x03,0x0A,0x0C,0x03,0x0C,0x00,0x05,0x02,0x0A],
+    [0x0A,0x0A,0x0C,0x05,0x05,0x03,0x0A,0x0A,0x0C,0x03,0x0C,0x03,0x0C,0x03,0x0A,0x0A],
+    [0x0A,0x0A,0x09,0x05,0x05,0x06,0x0A,0x0A,0x0D,0x04,0x03,0x0C,0x03,0x0C,0x02,0x0A],
+    [0x08,0x02,0x0A,0x0D,0x05,0x05,0x02,0x0A,0x0D,0x05,0x04,0x03,0x0C,0x03,0x0A,0x0A],
+    [0x0A,0x0A,0x0C,0x05,0x05,0x05,0x06,0x0C,0x05,0x05,0x05,0x06,0x0D,0x04,0x06,0x0A],
+    [0x0E,0x0C,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x06],
+]
+
+def grid_coord_valid(grid: list[list], x: int, y: int):
+    return x >= 0 and y >= 0 and x < len(grid[0]) and y < len(grid)
+
+def grid_coord_get(grid: list[list], x: int, y: int):
+    return grid[len(grid)-1-y][x]
+
+def grid_coord_set(grid: list[list], x: int, y: int, value):
+    grid[len(grid)-1-y][x] = value
+
+def grid_x(grid: list[list]):
+    return len(grid[0])
+
+def grid_y(grid: list[list]):
+    return len(grid)
+
+def grid_check_mask(grid: list[list], x: int, y: int, mask: int):
+    return (grid_coord_get(grid, x, y) & mask) == mask
+
+# TODO: implement queue?
 
 class Mouse():
+    width = 8
+    height = 10
     """Represents the micromouse"""
-    def __init__(self, location, wall_detector):
-        self.location = location
-        self.wall_detector = wall_detector
+    def __init__(self):
+        self.location = (0,0)
         self.facing = NORTH_MASK
-        self.state = MOUSE_STATE_CHECK
-        self.width = 8
-        self.height = 10
+        self.state = MOUSE_STATE_SCAN
         self.cells = [
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
@@ -91,164 +91,108 @@ class Mouse():
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
         ]
         self.flood = [
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-            [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
+            [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
         ]
-        self.q = []
-        self.flood_map()
-    def complete(self):
-        #return self.flood[self.location[1]][self.location[0]] == 0
-        return False
-    def flood_map(self):
+        self.queue = []
+        self.start_targets = [[0,0]]
+        self.goal_targets = [[7,7],[7,8],[8,7],[8,8]]
+        self.current_targets = self.goal_targets
+    def flood_map(self, targets: list[tuple]):
         # clear
-        for r in range(len(self.flood)):
-            for c in range(len(self.flood[r])):
-                self.flood[r][c] = None
-        #print(self.flood)
+        for x in range(grid_x(self.flood)):
+            for y in range(grid_y(self.flood)):
+                grid_coord_set(self.flood, x, y, FLOOD_EMPTY)
         # set target
-        self.flood[7][7] = 0
-        self.q.append((7,7))
-        self.flood[7][8] = 0
-        self.q.append((7,8))
-        self.flood[8][7] = 0
-        self.q.append((8,7))
-        self.flood[8][8] = 0
-        self.q.append((8,8))
-        while len(self.q) > 0:
-            coord = self.q.pop(0)
-            cell_num = self.flood[coord[0]][coord[1]]
-            #print(f"got {coord} num {cell_num}")
-            cell_num = cell_num + 1
-            x = coord[1]
-            y = coord[0]-1
-            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_north(coord[0], coord[1]):
-                if self.flood[y][x] == None:
-                    self.flood[y][x] = cell_num
-                    self.q.append((y,x))
-            x = coord[1]+1
-            y = coord[0]
-            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_east(coord[0], coord[1]):
-                if self.flood[y][x] == None:
-                    self.flood[y][x] = cell_num
-                    self.q.append((y,x))
-            x = coord[1]
-            y = coord[0]+1
-            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_south(coord[0], coord[1]):
-                if self.flood[y][x] == None:
-                    self.flood[y][x] = cell_num
-                    self.q.append((y,x))
-            x = coord[1]-1
-            y = coord[0]
-            if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_west(coord[0], coord[1]):
-                if self.flood[y][x] == None:
-                    self.flood[y][x] = cell_num
-                    self.q.append((y,x))
-        #print(self.flood)
+        for target in targets:
+            grid_coord_set(self.flood, target[0], target[1], 0)
+            self.queue.append(target)
+        # flood
+        while len(self.queue) > 0:
+            coord = self.queue.pop(0)
+            score = grid_coord_get(self.flood, coord[0], coord[1])
+            x = coord[0]
+            y = coord[1]+1
+            if grid_coord_valid(self.flood, x, y) and not self.wall_north(coord[0], coord[1]):
+                if grid_coord_get(self.flood, x, y) == FLOOD_EMPTY:
+                    grid_coord_set(self.flood, x, y, score+1)
+                    self.queue.append((x, y))
+            x = coord[0]+1
+            y = coord[1]
+            if grid_coord_valid(self.flood, x, y) and not self.wall_east(coord[0], coord[1]):
+                if grid_coord_get(self.flood, x, y) == FLOOD_EMPTY:
+                    grid_coord_set(self.flood, x, y, score+1)
+                    self.queue.append((x, y))
+            x = coord[0]
+            y = coord[1]-1
+            if grid_coord_valid(self.flood, x, y) and not self.wall_south(coord[0], coord[1]):
+                if grid_coord_get(self.flood, x, y) == FLOOD_EMPTY:
+                    grid_coord_set(self.flood, x, y, score+1)
+                    self.queue.append((x, y))
+            x = coord[0]-1
+            y = coord[1]
+            if grid_coord_valid(self.flood, x, y) and not self.wall_west(coord[0], coord[1]):
+                if grid_coord_get(self.flood, x, y) == FLOOD_EMPTY:
+                    grid_coord_set(self.flood, x, y, score+1)
+                    self.queue.append((x, y))
     def tick(self):
         logging.debug('mouse tick')
-        if self.state == MOUSE_STATE_CHECK:
-            self.check()
-            self.state = MOUSE_STATE_UPDATE
-        elif self.state == MOUSE_STATE_UPDATE:
-            self.update()
+        if self.state == MOUSE_STATE_SCAN:
+            self.scan()
+            self.state = MOUSE_STATE_FLOOD
+        elif self.state == MOUSE_STATE_FLOOD:
+            self.flood_map(self.current_targets)
             self.state = MOUSE_STATE_MOVE
         elif self.state == MOUSE_STATE_MOVE:
             self.move()
-            self.state = MOUSE_STATE_CHECK
-    def check(self):
+            self.state = MOUSE_STATE_SCAN
+    def scan(self):
         logging.debug("check for walls")
         if self.facing == NORTH_MASK:
-            self.scan_west()
-            self.scan_north()
-            self.scan_east()
+            self.scan_west(self.location[0], self.location[1])
+            self.scan_north(self.location[0], self.location[1])
+            self.scan_east(self.location[0], self.location[1])
         if self.facing == EAST_MASK:
-            self.scan_north()
-            self.scan_east()
-            self.scan_south()
+            self.scan_north(self.location[0], self.location[1])
+            self.scan_east(self.location[0], self.location[1])
+            self.scan_south(self.location[0], self.location[1])
         if self.facing == SOUTH_MASK:
-            self.scan_east()
-            self.scan_south()
-            self.scan_west()
+            self.scan_east(self.location[0], self.location[1])
+            self.scan_south(self.location[0], self.location[1])
+            self.scan_west(self.location[0], self.location[1])
         if self.facing == WEST_MASK:
-            self.scan_south()
-            self.scan_west()
-            self.scan_north()
-    def update(self):
-        logging.debug("update map")
-        self.flood_map()
+            self.scan_south(self.location[0], self.location[1])
+            self.scan_west(self.location[0], self.location[1])
+            self.scan_north(self.location[0], self.location[1])
     def move(self):
         logging.debug("move")
         directions = []
-        if self.facing == NORTH_MASK:
-            dir = self.check_west()
-            if dir:
-                directions.append(dir)
-            dir = self.check_north()
-            if dir:
-                directions.append(dir)
-            dir = self.check_east()
-            if dir:
-                directions.append(dir)
-
-            dir = self.check_south()
-            if dir:
-                directions.append(dir)
-        if self.facing == EAST_MASK:
-            dir = self.check_north()
-            if dir:
-                directions.append(dir)
-            dir = self.check_east()
-            if dir:
-                directions.append(dir)
-            dir = self.check_south()
-            if dir:
-                directions.append(dir)
-
-            dir = self.check_west()
-            if dir:
-                directions.append(dir)
-        if self.facing == SOUTH_MASK:
-            dir = self.check_east()
-            if dir:
-                directions.append(dir)
-            dir = self.check_south()
-            if dir:
-                directions.append(dir)
-            dir = self.check_west()
-            if dir:
-                directions.append(dir)
-
-            dir = self.check_north()
-            if dir:
-                directions.append(dir)
-        if self.facing == WEST_MASK:
-            dir = self.check_south()
-            if dir:
-                directions.append(dir)
-            dir = self.check_west()
-            if dir:
-                directions.append(dir)
-            dir = self.check_north()
-            if dir:
-                directions.append(dir)
-
-            dir = self.check_east()
-            if dir:
-                directions.append(dir)
+        dir = self.check_north()
+        if dir:
+            directions.append(dir)
+        dir = self.check_east()
+        if dir:
+            directions.append(dir)
+        dir = self.check_south()
+        if dir:
+            directions.append(dir)
+        dir = self.check_west()
+        if dir:
+            directions.append(dir)
         if len(directions) == 0:
             raise Exception("No direction")
         directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
@@ -256,125 +200,119 @@ class Mouse():
         if direction['dir'] != self.facing:
             self.facing = direction['dir']
         self.location = direction['coord']
-        # TODO: how to explore rest of maze once we find the target?
+        # TODO: how to explore rest of maze once we find the target? set target to start or even unexplored cells
         # TODO: split mouse logic from rendering code
-        #if self.flood[self.location[1]][self.location[0]] == 0:
-        #    self.mode = MOUSE_MODE_HIGHEST
-    def scan_north(self):
-        if not self.detected_north(self.location[1],self.location[0]):
+    def scan_north(self, x: int, y :int):
+        if grid_coord_get(self.cells, x, y) & NORTH_CHECKED_MASK != NORTH_CHECKED_MASK:
             print('scanning north')
-            y = self.location[1]-1
-            self.cells[self.location[1]][self.location[0]] |= NORTH_MASK<<4
-            if y >= 0 and y < MAZE_Y:
-                self.cells[y][self.location[0]] |= SOUTH_MASK<<4
-            if self.wall_detector.north(self.location[0], self.location[1]):
-                self.cells[self.location[1]][self.location[0]] |= NORTH_MASK
-                if y >= 0 and y < MAZE_Y:
-                    self.cells[self.location[1]-1][self.location[0]] |= SOUTH_MASK
-    def scan_east(self):
-        if not self.detected_east(self.location[1],self.location[0]):
+            _x = x
+            _y = y+1
+            grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | NORTH_CHECKED_MASK)
+            if grid_coord_valid(self.cells, _x, _y):
+                grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | SOUTH_CHECKED_MASK)
+            if grid_coord_get(MAZE, x, y) & NORTH_MASK == NORTH_MASK:
+                grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | NORTH_MASK)
+                if grid_coord_valid(self.cells, _x, _y):
+                    grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | SOUTH_MASK)
+    def scan_east(self, x: int, y: int):
+        if grid_coord_get(self.cells, x, y) & EAST_CHECKED_MASK != EAST_CHECKED_MASK:
             print('scanning east')
-            x = self.location[0]+1
-            self.cells[self.location[1]][self.location[0]] |= EAST_MASK<<4
-            if x >= 0 and x < MAZE_X:
-                self.cells[self.location[1]][x] |= WEST_MASK<<4
-            if self.wall_detector.east(self.location[0], self.location[1]):
-                self.cells[self.location[1]][self.location[0]] |= EAST_MASK
-                if x >= 0 and x < MAZE_X:
-                    self.cells[self.location[1]][self.location[0]+1] |= WEST_MASK
-    def scan_south(self):
-        if not self.detected_south(self.location[1],self.location[0]):
+            _x = x+1
+            _y = y
+            grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | EAST_CHECKED_MASK)
+            if grid_coord_valid(self.cells, _x, _y):
+                grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | WEST_CHECKED_MASK)
+            if grid_coord_get(MAZE, x, y) & EAST_MASK == EAST_MASK:
+                grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | EAST_MASK)
+                if grid_coord_valid(self.cells, _x, _y):
+                    grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | WEST_MASK)
+    def scan_south(self, x: int, y :int):
+        if grid_coord_get(self.cells, x, y) & SOUTH_CHECKED_MASK != SOUTH_CHECKED_MASK:
             print('scanning south')
-            y = self.location[1]+1
-            self.cells[self.location[1]][self.location[0]] |= SOUTH_MASK<<4
-            if y >= 0 and y < MAZE_Y:
-                self.cells[y][self.location[0]] |= NORTH_MASK<<4
-            if self.wall_detector.south(self.location[0], self.location[1]):
-                self.cells[self.location[1]][self.location[0]] |= SOUTH_MASK
-                if y >= 0 and y < MAZE_Y:
-                    self.cells[self.location[1]+1][self.location[0]] |= NORTH_MASK
-    def scan_west(self):
-        if not self.detected_west(self.location[1],self.location[0]):
+            _x = x
+            _y = y-1
+            grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | SOUTH_CHECKED_MASK)
+            if grid_coord_valid(self.cells, _x, _y):
+                grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | NORTH_CHECKED_MASK)
+            if grid_coord_get(MAZE, x, y) & SOUTH_MASK == SOUTH_MASK:
+                grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | SOUTH_MASK)
+                if grid_coord_valid(self.cells, _x, _y):
+                    grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | NORTH_MASK)
+    def scan_west(self, x: int, y: int):
+        if grid_coord_get(self.cells, x, y) & WEST_CHECKED_MASK != WEST_CHECKED_MASK:
             print('scanning west')
-            x = self.location[0]-1
-            self.cells[self.location[1]][self.location[0]] |= WEST_MASK<<4
-            if x >= 0 and x < MAZE_X:
-                self.cells[self.location[1]][x] |= EAST_MASK<<4
-            if self.wall_detector.west(self.location[0], self.location[1]):
-                self.cells[self.location[1]][self.location[0]] |= WEST_MASK
-                if x >= 0 and x < MAZE_X:
-                    self.cells[self.location[1]][self.location[0]-1] |= EAST_MASK
+            _x = x-1
+            _y = y
+            grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | WEST_CHECKED_MASK)
+            if grid_coord_valid(self.cells, _x, _y):
+                grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | EAST_CHECKED_MASK)
+            if grid_coord_get(MAZE, x, y) & WEST_MASK == WEST_MASK:
+                grid_coord_set(self.cells, x, y, grid_coord_get(self.cells, x, y) | WEST_MASK)
+                if grid_coord_valid(self.cells, _x, _y):
+                    grid_coord_set(self.cells, _x, _y, grid_coord_get(self.cells, _x, _y) | EAST_MASK)
     def check_north(self):
         # check north
         x = self.location[0]
-        y = self.location[1]-1
-        #print(x,y)
-        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_north(self.location[1],self.location[0]):
+        y = self.location[1]
+        _x = x
+        _y = y+1
+        if grid_coord_valid(self.cells, _x, _y) and not self.wall_north(x,y):
             print("checking north")
-            num = self.flood[y][x]
+            num = grid_coord_get(self.flood, _x, _y)
             print(f"north is {num}")
-            return {'value': num, 'coord':(x,y), 'dir':NORTH_MASK}
+            return {'value': num, 'coord':(_x,_y), 'dir':NORTH_MASK}
         return None
     def check_east(self):
         # check east
-        x = self.location[0]+1
+        x = self.location[0]
         y = self.location[1]
-        #print(x,y)
-        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_east(self.location[1],self.location[0]):
+        _x = x+1
+        _y = y
+        if grid_coord_valid(self.cells, _x, _y) and not self.wall_east(x,y):
             print("checking east")
-            num = self.flood[y][x]
+            num = grid_coord_get(self.flood, _x, _y)
             print(f"east is {num}")
-            return {'value': num, 'coord':(x,y), 'dir':EAST_MASK}
+            return {'value': num, 'coord':(_x,_y), 'dir':EAST_MASK}
         return None
     def check_south(self):
         # check south
         x = self.location[0]
-        y = self.location[1]+1
-        #print(x,y)
-        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_south(self.location[1],self.location[0]):
+        y = self.location[1]
+        _x = x
+        _y = y-1
+        if grid_coord_valid(self.cells, _x, _y) and not self.wall_south(x,y):
             print("checking south")
-            num = self.flood[y][x]
+            num = grid_coord_get(self.flood, _x, _y)
             print(f"south is {num}")
-            return {'value': num, 'coord':(x,y), 'dir':SOUTH_MASK}
+            return {'value': num, 'coord':(_x,_y), 'dir':SOUTH_MASK}
         return None
     def check_west(self):
         # check west
-        x = self.location[0]-1
+        x = self.location[0]
         y = self.location[1]
-        #print(x,y)
-        if x>=0 and x<MAZE_X and y>=0 and y<MAZE_Y and not self.wall_west(self.location[1],self.location[0]):
+        _x = x-1
+        _y = y
+        if grid_coord_valid(self.cells, _x, _y) and not self.wall_west(x,y):
             print("checking west")
-            num = self.flood[y][x]
+            num = grid_coord_get(self.flood, _x, _y)
             print(f"west is {num}")
-            return {'value': num, 'coord':(x,y), 'dir':WEST_MASK}
+            return {'value': num, 'coord':(_x,_y), 'dir':WEST_MASK}
         return None
-    def detected_north(self, y, x):
-        return (self.cells[y][x] & NORTH_MASK<<4) == NORTH_MASK<<4
-    def detected_east(self, y, x):
-        return (self.cells[y][x] & EAST_MASK<<4) == EAST_MASK<<4
-    def detected_south(self, y, x):
-        return (self.cells[y][x] & SOUTH_MASK<<4) == SOUTH_MASK<<4
-    def detected_west(self, y, x):
-        return (self.cells[y][x] & WEST_MASK<<4) == WEST_MASK<<4
-    def wall_north(self, y, x):
-        return (self.cells[y][x] & NORTH_MASK) == NORTH_MASK
-    def wall_east(self, y, x):
-        return (self.cells[y][x] & EAST_MASK) == EAST_MASK
-    def wall_south(self, y, x):
-        return (self.cells[y][x] & SOUTH_MASK) == SOUTH_MASK
-    def wall_west(self, y, x):
-        return (self.cells[y][x] & WEST_MASK) == WEST_MASK
+    def wall_north(self, x, y):
+        return grid_check_mask(self.cells, x, y, NORTH_MASK)
+    def wall_east(self, x, y):
+        return grid_check_mask(self.cells, x, y, EAST_MASK)
+    def wall_south(self, x, y):
+        return grid_check_mask(self.cells, x, y, SOUTH_MASK)
+    def wall_west(self, x, y):
+        return grid_check_mask(self.cells, x, y, WEST_MASK)
 
 class App():
-    """Runs the simulation, curently attempt to simulate mouse maze mapping and floodfill, we are ignoring mouse navigation"""
+    """Runs the simulation"""
     def __init__(self):
         self._delay = 0.03
 
-        self.maze = Maze()
-        self.maze.validate()
-
-        self.start = (0,15)
-        self.mouse = Mouse(self.start, WallDetector(self.maze))
+        self.mouse = Mouse()
 
         self._running = True
         self._display_surf = None
@@ -413,102 +351,110 @@ class App():
             self._counter = 0
             if self._complete is False:
                 self.mouse.tick()
-                if self.mouse.complete():
-                    self._complete = True
     def on_render(self) -> None:
         """On render."""
         self._display_surf.fill((0,0,0))
-        for r in range(self.maze.rows()):
-            for c in range(self.maze.cols()):
-                left = c*CELL_SIZE*SCALE
-                right = (((c*CELL_SIZE)+CELL_SIZE)*SCALE)-1
-                top = r*CELL_SIZE*SCALE
-                bot = (((r*CELL_SIZE)+CELL_SIZE)*SCALE)-1
+        for x in range(grid_x(MAZE)):
+            for y in range(grid_y(MAZE)):
                 thickness = 1
 
-                if (self.maze.cells[r][c] & NORTH_MASK) == NORTH_MASK:
+                # render physical walls
+                left = x*CELL_SIZE*SCALE
+                right = left + (CELL_SIZE*SCALE) - 1
+                top = self._height - (y*CELL_SIZE*SCALE) - (CELL_SIZE*SCALE)
+                bot = top + (CELL_SIZE*SCALE) - 1
+
+                if (grid_coord_get(MAZE, x, y) & NORTH_MASK) == NORTH_MASK:
                     colour = (80,0,0)
                     pygame.draw.line(self._display_surf, colour, (left,top), (right,top), thickness)
-                if (self.maze.cells[r][c] & EAST_MASK) == EAST_MASK:
+                if (grid_coord_get(MAZE, x, y) & EAST_MASK) == EAST_MASK:
                     colour = (80,0,0)
                     pygame.draw.line(self._display_surf, colour, (right,top), (right,bot), thickness)
-                if (self.maze.cells[r][c] & SOUTH_MASK) == SOUTH_MASK:
+                if (grid_coord_get(MAZE, x, y) & SOUTH_MASK) == SOUTH_MASK:
                     colour = (80,0,0)
                     pygame.draw.line(self._display_surf, colour, (right,bot), (left,bot), thickness)
-                if (self.maze.cells[r][c] & WEST_MASK) == WEST_MASK:
+                if (grid_coord_get(MAZE, x, y) & WEST_MASK) == WEST_MASK:
                     colour = (80,0,0)
                     pygame.draw.line(self._display_surf, colour, (left,bot), (left,top), thickness)
                 
+                # render detected walls
                 moffset = 1
                 mleft = left+moffset
                 mright = right-moffset
                 mtop = top+moffset
                 mbot = bot-moffset
-                if (self.mouse.cells[r][c] & NORTH_MASK) == NORTH_MASK:
+                if (grid_coord_get(self.mouse.cells, x, y) & NORTH_MASK) == NORTH_MASK:
                     colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mleft,mtop), (mright,mtop), thickness)
-                if (self.mouse.cells[r][c] & EAST_MASK) == EAST_MASK:
+                if (grid_coord_get(self.mouse.cells, x, y) & EAST_MASK) == EAST_MASK:
                     colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mright,mtop), (mright,mbot), thickness)
-                if (self.mouse.cells[r][c] & SOUTH_MASK) == SOUTH_MASK:
+                if (grid_coord_get(self.mouse.cells, x, y) & SOUTH_MASK) == SOUTH_MASK:
                     colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mright,mbot), (mleft,mbot), thickness)
-                if (self.mouse.cells[r][c] & WEST_MASK) == WEST_MASK:
+                if (grid_coord_get(self.mouse.cells, x, y) & WEST_MASK) == WEST_MASK:
                     colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mleft,mbot), (mleft,mtop), thickness)
 
-
+        # render mouse
         cl = self.mouse.location[0] * CELL_SIZE * SCALE
-        ct = self.mouse.location[1] * CELL_SIZE * SCALE
+        ct = self._height - (self.mouse.location[1] * CELL_SIZE * SCALE) - (CELL_SIZE*SCALE)
         cr = cl + (CELL_SIZE*SCALE)
         cb = ct + (CELL_SIZE*SCALE)
         if self.mouse.facing == NORTH_MASK:
-            l = (cl) + ((self.mouse.width*SCALE) / 2)
-            t = (ct) + ((self.mouse.height*SCALE) / 2)
+            l = (cl) + (CELL_SIZE*SCALE/2) - (self.mouse.width*SCALE/2)
+            t = (ct) + (CELL_SIZE*SCALE/2) - (self.mouse.height*SCALE/2)
             w = self.mouse.width*SCALE
             h = self.mouse.height*SCALE
-            d = 5 * SCALE
-            if self.mouse.state == MOUSE_STATE_CHECK:
-                pygame.draw.line(self._display_surf, (255,255,255), (cl,ct), (cl+d,ct+d), 1)
-                pygame.draw.line(self._display_surf, (255,255,255), (cl+(CELL_SIZE*SCALE/2),ct), (cl+(CELL_SIZE*SCALE/2),ct+d), 1)
-                pygame.draw.line(self._display_surf, (255,255,255), (cr,ct), (cr-d,ct+d), 1)
+        #    d = 5 * SCALE
+        #    if self.mouse.state == MOUSE_STATE_SCAN:
+        #        pygame.draw.line(self._display_surf, (255,255,255), (cl,ct), (cl+d,ct+d), 1)
+        #        pygame.draw.line(self._display_surf, (255,255,255), (cl+(CELL_SIZE*SCALE/2),ct), (cl+(CELL_SIZE*SCALE/2),ct+d), 1)
+        #        pygame.draw.line(self._display_surf, (255,255,255), (cr,ct), (cr-d,ct+d), 1)
         if self.mouse.facing == EAST_MASK:
-            l = (self.mouse.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.height*SCALE) / 2)
-            t = (self.mouse.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.width*SCALE) / 2)
+            l = (cl) + (CELL_SIZE*SCALE/2) - (self.mouse.height*SCALE/2)
+            t = (ct) + (CELL_SIZE*SCALE/2) - (self.mouse.width*SCALE/2)
             w = self.mouse.height*SCALE
             h = self.mouse.width*SCALE
-            d = 5 * SCALE
-            if self.mouse.state == MOUSE_STATE_CHECK:
-                pass
+        #    d = 5 * SCALE
+        #    if self.mouse.state == MOUSE_STATE_CHECK:
+        #        pass
         if self.mouse.facing == SOUTH_MASK:
-            l = (self.mouse.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.width*SCALE) / 2)
-            t = (self.mouse.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.height*SCALE) / 2)
+            l = (cl) + (CELL_SIZE*SCALE/2) - (self.mouse.width*SCALE/2)
+            t = (ct) + (CELL_SIZE*SCALE/2) - (self.mouse.height*SCALE/2)
             w = self.mouse.width*SCALE
             h = self.mouse.height*SCALE
-            d = 5 * SCALE
-            if self.mouse.state == MOUSE_STATE_CHECK:
-                pass
+        #    d = 5 * SCALE
+        #    if self.mouse.state == MOUSE_STATE_CHECK:
+        #        pass
         if self.mouse.facing == WEST_MASK:
-            l = (self.mouse.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.height*SCALE) / 2)
-            t = (self.mouse.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.width*SCALE) / 2)
+            l = (cl) + (CELL_SIZE*SCALE/2) - (self.mouse.height*SCALE/2)
+            t = (ct) + (CELL_SIZE*SCALE/2) - (self.mouse.width*SCALE/2)
             w = self.mouse.height*SCALE
             h = self.mouse.width*SCALE
-            d = 5 * SCALE
-            if self.mouse.state == MOUSE_STATE_CHECK:
-                pass
-        if self.mouse.state == MOUSE_STATE_CHECK:
+        #    d = 5 * SCALE
+        #    if self.mouse.state == MOUSE_STATE_CHECK:
+        #        pass
+        if self.mouse.state == MOUSE_STATE_SCAN:
             colour = (255,0,0)
-        if self.mouse.state == MOUSE_STATE_UPDATE:
+        if self.mouse.state == MOUSE_STATE_FLOOD:
             colour = (255,255,0)
         if self.mouse.state == MOUSE_STATE_MOVE:
             colour = (0,255,0)
         pygame.draw.rect(self._display_surf, colour, pygame.Rect((l,t), (w,h)), 0)
         
-        for r in range(len(self.mouse.flood)):
-            for c in range(len(self.mouse.flood[r])):
-                num = self.mouse.flood[r][c]
+        # render flood values
+        for x in range(grid_x(self.mouse.flood)):
+            for y in range(grid_y(self.mouse.flood)):
+                num = grid_coord_get(self.mouse.flood, x, y)
                 img = self.font.render(str(num), True, (80,80,80))
-                self._display_surf.blit(img, (c*CELL_SIZE*SCALE, r*CELL_SIZE*SCALE))
+                self._display_surf.blit(img, (x*CELL_SIZE*SCALE, self._height-(y*CELL_SIZE*SCALE)-(CELL_SIZE*SCALE)))
+
+        # render cell coordinates
+        #for x in range(grid_x(self.mouse.flood)):
+        #    for y in range(grid_y(self.mouse.flood)):
+        #        img = self.font.render(f"{x},{y}", True, (100,100,100))
+        #        self._display_surf.blit(img, (x*CELL_SIZE*SCALE, self._height-(y*CELL_SIZE*SCALE)-(CELL_SIZE*SCALE)))
 
         pygame.display.update()
     def on_cleanup(self) -> None:
