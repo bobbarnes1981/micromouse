@@ -17,9 +17,6 @@ MOUSE_STATE_CHECK = 1
 MOUSE_STATE_UPDATE = 2
 MOUSE_STATE_MOVE = 3
 
-MOUSE_MODE_LOWEST = 1
-MOUSE_MODE_HIGHEST = 2
-
 class Maze():
     """Represents the physical maze"""
     def __init__(self):
@@ -73,7 +70,6 @@ class Mouse():
         self.wall_detector = wall_detector
         self.facing = NORTH_MASK
         self.state = MOUSE_STATE_CHECK
-        self.mode = MOUSE_MODE_LOWEST
         self.width = 8
         self.height = 10
         self.cells = [
@@ -162,53 +158,6 @@ class Mouse():
                     self.flood[y][x] = cell_num
                     self.q.append((y,x))
         #print(self.flood)
-
-    def draw(self, surface):
-        cl = self.location[0] * CELL_SIZE * SCALE
-        ct = self.location[1] * CELL_SIZE * SCALE
-        cr = cl + (CELL_SIZE*SCALE)
-        cb = ct + (CELL_SIZE*SCALE)
-        if self.facing == NORTH_MASK:
-            l = (cl) + ((self.width*SCALE) / 2)
-            t = (ct) + ((self.height*SCALE) / 2)
-            w = self.width*SCALE
-            h = self.height*SCALE
-            d = 5 * SCALE
-            if self.state == MOUSE_STATE_CHECK:
-                pygame.draw.line(surface, (255,255,255), (cl,ct), (cl+d,ct+d), 1)
-                pygame.draw.line(surface, (255,255,255), (cl+(CELL_SIZE*SCALE/2),ct), (cl+(CELL_SIZE*SCALE/2),ct+d), 1)
-                pygame.draw.line(surface, (255,255,255), (cr,ct), (cr-d,ct+d), 1)
-        if self.facing == EAST_MASK:
-            l = (self.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.height*SCALE) / 2)
-            t = (self.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.width*SCALE) / 2)
-            w = self.height*SCALE
-            h = self.width*SCALE
-            d = 5 * SCALE
-            if self.state == MOUSE_STATE_CHECK:
-                pass
-        if self.facing == SOUTH_MASK:
-            l = (self.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.width*SCALE) / 2)
-            t = (self.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.height*SCALE) / 2)
-            w = self.width*SCALE
-            h = self.height*SCALE
-            d = 5 * SCALE
-            if self.state == MOUSE_STATE_CHECK:
-                pass
-        if self.facing == WEST_MASK:
-            l = (self.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.height*SCALE) / 2)
-            t = (self.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.width*SCALE) / 2)
-            w = self.height*SCALE
-            h = self.width*SCALE
-            d = 5 * SCALE
-            if self.state == MOUSE_STATE_CHECK:
-                pass
-        if self.state == MOUSE_STATE_CHECK:
-            colour = (255,0,0)
-        if self.state == MOUSE_STATE_UPDATE:
-            colour = (255,255,0)
-        if self.state == MOUSE_STATE_MOVE:
-            colour = (0,255,0)
-        pygame.draw.rect(surface, colour, pygame.Rect((l,t), (w,h)), 0)
     def tick(self):
         logging.debug('mouse tick')
         if self.state == MOUSE_STATE_CHECK:
@@ -302,10 +251,7 @@ class Mouse():
                 directions.append(dir)
         if len(directions) == 0:
             raise Exception("No direction")
-        if self.mode == MOUSE_MODE_LOWEST:
-            directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
-        if self.mode == MOUSE_MODE_HIGHEST:
-            directions.sort(key=lambda x: x['value'], reverse=True) # sort descending
+        directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
         direction = directions[0]
         if direction['dir'] != self.facing:
             self.facing = direction['dir']
@@ -481,37 +427,82 @@ class App():
                 thickness = 1
 
                 if (self.maze.cells[r][c] & NORTH_MASK) == NORTH_MASK:
-                    colour = (255,0,0)
+                    colour = (80,0,0)
                     pygame.draw.line(self._display_surf, colour, (left,top), (right,top), thickness)
                 if (self.maze.cells[r][c] & EAST_MASK) == EAST_MASK:
-                    colour = (255,0,0)
+                    colour = (80,0,0)
                     pygame.draw.line(self._display_surf, colour, (right,top), (right,bot), thickness)
                 if (self.maze.cells[r][c] & SOUTH_MASK) == SOUTH_MASK:
-                    colour = (255,0,0)
+                    colour = (80,0,0)
                     pygame.draw.line(self._display_surf, colour, (right,bot), (left,bot), thickness)
                 if (self.maze.cells[r][c] & WEST_MASK) == WEST_MASK:
-                    colour = (255,0,0)
+                    colour = (80,0,0)
                     pygame.draw.line(self._display_surf, colour, (left,bot), (left,top), thickness)
                 
-                moffset = 2
+                moffset = 1
                 mleft = left+moffset
                 mright = right-moffset
                 mtop = top+moffset
                 mbot = bot-moffset
                 if (self.mouse.cells[r][c] & NORTH_MASK) == NORTH_MASK:
-                    colour = (0,255,0)
+                    colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mleft,mtop), (mright,mtop), thickness)
                 if (self.mouse.cells[r][c] & EAST_MASK) == EAST_MASK:
-                    colour = (0,255,0)
+                    colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mright,mtop), (mright,mbot), thickness)
                 if (self.mouse.cells[r][c] & SOUTH_MASK) == SOUTH_MASK:
-                    colour = (0,255,0)
+                    colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mright,mbot), (mleft,mbot), thickness)
                 if (self.mouse.cells[r][c] & WEST_MASK) == WEST_MASK:
-                    colour = (0,255,0)
+                    colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mleft,mbot), (mleft,mtop), thickness)
 
-        self.mouse.draw(self._display_surf)
+
+        cl = self.mouse.location[0] * CELL_SIZE * SCALE
+        ct = self.mouse.location[1] * CELL_SIZE * SCALE
+        cr = cl + (CELL_SIZE*SCALE)
+        cb = ct + (CELL_SIZE*SCALE)
+        if self.mouse.facing == NORTH_MASK:
+            l = (cl) + ((self.mouse.width*SCALE) / 2)
+            t = (ct) + ((self.mouse.height*SCALE) / 2)
+            w = self.mouse.width*SCALE
+            h = self.mouse.height*SCALE
+            d = 5 * SCALE
+            if self.mouse.state == MOUSE_STATE_CHECK:
+                pygame.draw.line(self._display_surf, (255,255,255), (cl,ct), (cl+d,ct+d), 1)
+                pygame.draw.line(self._display_surf, (255,255,255), (cl+(CELL_SIZE*SCALE/2),ct), (cl+(CELL_SIZE*SCALE/2),ct+d), 1)
+                pygame.draw.line(self._display_surf, (255,255,255), (cr,ct), (cr-d,ct+d), 1)
+        if self.mouse.facing == EAST_MASK:
+            l = (self.mouse.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.height*SCALE) / 2)
+            t = (self.mouse.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.width*SCALE) / 2)
+            w = self.mouse.height*SCALE
+            h = self.mouse.width*SCALE
+            d = 5 * SCALE
+            if self.mouse.state == MOUSE_STATE_CHECK:
+                pass
+        if self.mouse.facing == SOUTH_MASK:
+            l = (self.mouse.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.width*SCALE) / 2)
+            t = (self.mouse.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.height*SCALE) / 2)
+            w = self.mouse.width*SCALE
+            h = self.mouse.height*SCALE
+            d = 5 * SCALE
+            if self.mouse.state == MOUSE_STATE_CHECK:
+                pass
+        if self.mouse.facing == WEST_MASK:
+            l = (self.mouse.location[0] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.height*SCALE) / 2)
+            t = (self.mouse.location[1] * CELL_SIZE * SCALE) + ((CELL_SIZE*SCALE - self.mouse.width*SCALE) / 2)
+            w = self.mouse.height*SCALE
+            h = self.mouse.width*SCALE
+            d = 5 * SCALE
+            if self.mouse.state == MOUSE_STATE_CHECK:
+                pass
+        if self.mouse.state == MOUSE_STATE_CHECK:
+            colour = (255,0,0)
+        if self.mouse.state == MOUSE_STATE_UPDATE:
+            colour = (255,255,0)
+        if self.mouse.state == MOUSE_STATE_MOVE:
+            colour = (0,255,0)
+        pygame.draw.rect(self._display_surf, colour, pygame.Rect((l,t), (w,h)), 0)
         
         for r in range(len(self.mouse.flood)):
             for c in range(len(self.mouse.flood[r])):
