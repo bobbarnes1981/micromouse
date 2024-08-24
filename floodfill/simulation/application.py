@@ -156,11 +156,12 @@ class App():
 
         routes = self.mouse.get_routes()
         for route in routes:
+            #print([micromouse.decode_direction(r['rel_dir']) for r in route])
             _r = None
             for r in route:
                 if _r:
-                    a = ((_r[0]*CELL_SIZE*SCALE)+(CELL_SIZE*SCALE/2),self._height - (_r[1] * CELL_SIZE * SCALE) - (CELL_SIZE*SCALE/2))
-                    b = ((r[0]*CELL_SIZE*SCALE)+(CELL_SIZE*SCALE/2),self._height - (r[1] * CELL_SIZE * SCALE) - (CELL_SIZE*SCALE/2))
+                    a = ((_r['coord'][0]*CELL_SIZE*SCALE)+(CELL_SIZE*SCALE/2),self._height - (_r['coord'][1] * CELL_SIZE * SCALE) - (CELL_SIZE*SCALE/2))
+                    b = ((r['coord'][0]*CELL_SIZE*SCALE)+(CELL_SIZE*SCALE/2),self._height - (r['coord'][1] * CELL_SIZE * SCALE) - (CELL_SIZE*SCALE/2))
                     pygame.draw.line(self._display_surf, (255,255,255), a, b)
                 _r = r
 

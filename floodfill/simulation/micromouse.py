@@ -10,6 +10,21 @@ EAST_MASK = 0x02
 SOUTH_MASK = 0x04
 WEST_MASK = 0x08
 
+DIRECTION_F = 1
+DIRECTION_R = 2
+DIRECTION_B = 4
+DIRECTION_L = 8
+
+def decode_direction(direction: int) -> str:
+    if direction == DIRECTION_F:
+        return "F"
+    if direction == DIRECTION_R:
+        return "R"
+    if direction == DIRECTION_B:
+        return "B"
+    if direction == DIRECTION_L:
+        return "L"
+
 NORTH_CHECKED_MASK = 0x10
 EAST_CHECKED_MASK = 0x20
 SOUTH_CHECKED_MASK = 0x40
@@ -143,28 +158,40 @@ class Mouse():
             pass
 
         if self.mode == MOUSE_MODE_SEARCH_1:
+            # starting in (0,0) initial search for goal
             logging.info('search 1')
             if grid_get(self.flood, self.location[0], self.location[1]) == 0:
+                # reached the goal, navigate back to start
                 self.mode = MOUSE_MODE_RETURN_TO_START_1
                 self.set_origin_and_targets(self.location, [self.start_target])
         elif self.mode == MOUSE_MODE_RETURN_TO_START_1:
+            # starting at goal now navigating back to start
             logging.info('return to start 1')
             if grid_get(self.flood, self.location[0], self.location[1]) == 0:
+                # reached start, navigate to goal again
                 self.mode = MOUSE_MODE_SEARCH_2
                 self.set_origin_and_targets(self.start_target, self.goal_targets)
         elif self.mode == MOUSE_MODE_SEARCH_2:
+            # starting in (0,0) second search for goal
             logging.info('search 2')
             if grid_get(self.flood, self.location[0], self.location[1]) == 0:
+                # reached the goal, navigate back to start
                 self.mode = MOUSE_MODE_RETURN_TO_START_2
                 self.set_origin_and_targets(self.location, [self.start_target])
         elif self.mode == MOUSE_MODE_RETURN_TO_START_2:
+            # starting at goal now navigate back to the start
             logging.info('return to start 2')
             if grid_get(self.flood, self.location[0], self.location[1]) == 0:
+                # reached the start, fast navigate to the goal
                 self.mode = MOUSE_MODE_FAST_RUN
                 self.set_origin_and_targets(self.start_target, self.goal_targets)
+                # we will need to turn around as we enter the cell facing the wrong way
+                self.turn_back()
         elif self.mode == MOUSE_MODE_FAST_RUN:
+            # fast navigate to the goal
             logging.info('fast run')
             if grid_get(self.flood, self.location[0], self.location[1]) == 0:
+                # reached the goal, done
                 self.mode = MOUSE_MODE_DONE
                 self.state = MOUSE_STATE_DONE
         elif self.mode == MOUSE_MODE_DONE:
@@ -173,79 +200,72 @@ class Mouse():
     def get_routes(self):
         """Get the generated route(s)"""
         return self.routes
-    def generate_routes(self, origin, facing, depth, limit):
+    def generate_routes(self, origin, abs_dir, rel_dir, depth, limit):
         """Generate routes to the goal. If there are multiple choices limit branching depth"""
         routes = []
         route = []
-        current_loc = origin
-        current_facing = facing
+        current_location = {'value':None, 'coord':origin, 'abs_dir':abs_dir, 'rel_dir':rel_dir}
         current_score = 0
-        required_val = grid_get(self.flood, current_loc[0], current_loc[1])
-        while current_loc:
-            route.append(current_loc)
-            directions = self.get_directions(current_loc[0], current_loc[1])
+        required_val = grid_get(self.flood, current_location['coord'][0], current_location['coord'][1])
+        while current_location:
+            route.append(current_location)
+            directions = self.get_directions(current_location['coord'][0], current_location['coord'][1], current_location['abs_dir'])
             required_val = required_val - 1
             if len(directions) == 0:
                 # no directions
-                current_loc = None
-                current_facing = None
+                current_location = None
                 routes.append({'score':current_score,'route':route})
             elif len(directions) == 1:
                 # single direction
                 if directions[0]['value'] == required_val:
                     # correct value
-                    current_loc = directions[0]['coord']
-                    if current_facing != directions[0]['dir']:
-                        current_score+=1
-                    current_facing = directions[0]['dir']
+                    if current_location['abs_dir'] != directions[0]['abs_dir']:
+                        # increase score if we make a turn, lowest score is best
+                        current_score += 1
+                    current_location = directions[0]
                 else:
                     # wrong value
-                    current_loc = None
-                    current_facing = None
+                    current_location = None
                     routes.append({'score':current_score,'route':route})
             else:
                 # multiple directions
                 if directions[0]['value'] == directions[1]['value']:
                     # multiple routes
                     if depth < limit and directions[0]['value'] == required_val:
-                        current_loc = None
-                        current_facing = None
+                        current_location = None
                         # correct value
                         for direction in directions:
                             if directions[0]['value'] == direction['value']:
-                                sub_routes = self.generate_routes(direction['coord'], current_facing, depth+1, limit)
+                                sub_routes = self.generate_routes(direction['coord'], direction['abs_dir'], direction['rel_dir'], depth+1, limit)
                                 for sub_route in sub_routes:
                                     routes.append({'score':current_score+sub_route['score'],'route':route+sub_route['route']})
                     else:
                         # wrong value
-                        current_loc = None
-                        current_facing = None
+                        current_location = None
                         routes.append({'score':current_score,'route':route})
                 else:
                     # single route
                     if directions[0]['value'] == required_val:
                         # correct value
-                        current_loc = directions[0]['coord']
-                        if current_facing != directions[0]['dir']:
+                        if current_location['abs_dir'] != directions[0]['abs_dir']:
                             # increase score if we make a turn, lowest score is best
                             current_score+=1
-                        current_facing = directions[0]['dir']
+                        current_location = directions[0]
                     else:
                         # wrong value
-                        current_loc = None
-                        current_facing = None
+                        current_location = None
                         routes.append({'score':current_score,'route':route})
         return routes
 
     def generate_best_routes_for_origin(self):
         """Generate routes and select the best"""
-        routes = self.generate_routes(self.current_origin, NORTH_MASK, 0, 8)
+        routes = self.generate_routes(self.current_origin, NORTH_MASK, None, 0, 8)
         successful_routes = []
         # check for routes that reach the goal
-        for route in routes:
-            coord = route['route'][-1]
-            if grid_get(self.flood, coord[0], coord[1]) == 0:
-                successful_routes.append(route)
+        for route_info in routes:
+            step_info = route_info['route'][-1]
+            if grid_get(self.flood, step_info['coord'][0], step_info['coord'][1]) == 0:
+                successful_routes.append(route_info)
         if len(successful_routes) == 0:
             # no completed routes, return all routes
             return [r['route'] for r in routes]
@@ -299,18 +319,18 @@ class Mouse():
             changes += self.scan_direction(self.read_right_sensor, NORTH_CHECKED_MASK, NORTH_MASK, SOUTH_CHECKED_MASK, SOUTH_MASK)
         return changes
 
-    def get_directions(self, x: int, y: int):
+    def get_directions(self, x: int, y: int, facing: int) -> list[dict]:
         directions = []
-        dir = self.get_accessible_value(x, y, NORTH_MASK)
+        dir = self.get_accessible_value(x, y, NORTH_MASK, facing)
         if dir:
             directions.append(dir)
-        dir = self.get_accessible_value(x, y, EAST_MASK)
+        dir = self.get_accessible_value(x, y, EAST_MASK, facing)
         if dir:
             directions.append(dir)
-        dir = self.get_accessible_value(x, y, SOUTH_MASK)
+        dir = self.get_accessible_value(x, y, SOUTH_MASK, facing)
         if dir:
             directions.append(dir)
-        dir = self.get_accessible_value(x, y, WEST_MASK)
+        dir = self.get_accessible_value(x, y, WEST_MASK, facing)
         if dir:
             directions.append(dir)
         if len(directions) == 0:
@@ -321,16 +341,25 @@ class Mouse():
     def move_fast(self) -> bool:
         # assuming there is one generated optimal route
         if self.route_step < len(self.routes[0]):
-            self.location = self.routes[0][self.route_step]
-            # TODO: facing needs updating
+            self.move_relative(self.routes[0][self.route_step]['rel_dir'])
             self.route_step += 1
     def move_scanning(self):
         logging.debug("move")
-        directions = self.get_directions(self.location[0], self.location[1])
-        direction = directions[0]
-        if direction['dir'] != self.facing:
-            self.facing = direction['dir']
-        self.location = direction['coord']
+        directions = self.get_directions(self.location[0], self.location[1], self.facing)
+        self.move_relative(directions[0]['rel_dir'])
+
+    def move_relative(self, relative_direction) -> None:
+        if relative_direction == DIRECTION_F:
+            self.move_forward()
+        elif relative_direction == DIRECTION_R:
+            self.turn_right()
+            self.move_forward()
+        elif relative_direction == DIRECTION_B:
+            self.turn_back()
+            self.move_forward()
+        elif relative_direction == DIRECTION_L:
+            self.turn_left()
+            self.move_forward()
 
     def scan_direction(self, scanner: callable, direction_checked_mask, direction_mask, _direction_checked_mask, _direction_mask) -> int:
         if self.need_to_scan(self.location, direction_checked_mask):
@@ -370,13 +399,52 @@ class Mouse():
     def get_wall(self, location, direction_mask) -> bool:
         return grid_get_mask(self.map, location[0], location[1], direction_mask)
 
-    def get_accessible_value(self, x: int, y: int, direction_mask: int) -> dict:
+    def get_accessible_value(self, x: int, y: int, direction_mask: int, facing_mask: int) -> dict:
         neighbour = self.get_neighbour((x, y), direction_mask)
         if neighbour:
-            if not self.get_wall((x,y),direction_mask): # TODO: do we need to check walls?
+            if not self.get_wall((x,y),direction_mask):
                 num = grid_get(self.flood, neighbour[0], neighbour[1])
-                return {'value': num, 'coord':neighbour, 'dir':direction_mask}
+                return {'value': num, 'coord':neighbour, 'abs_dir':direction_mask, 'rel_dir':self.get_rel_dir(direction_mask, facing_mask)}
         return None
+    
+    def get_rel_dir(self, direction_mask: int, facing_mask: int) -> int:
+        if facing_mask == NORTH_MASK:
+            if direction_mask == NORTH_MASK:
+                return DIRECTION_F
+            elif direction_mask == EAST_MASK:
+                return DIRECTION_R
+            elif direction_mask == SOUTH_MASK:
+                return DIRECTION_B
+            elif direction_mask == WEST_MASK:
+                return DIRECTION_L
+        if facing_mask == EAST_MASK:
+            if direction_mask == NORTH_MASK:
+                return DIRECTION_L
+            elif direction_mask == EAST_MASK:
+                return DIRECTION_F
+            elif direction_mask == SOUTH_MASK:
+                return DIRECTION_R
+            elif direction_mask == WEST_MASK:
+                return DIRECTION_B
+        if facing_mask == SOUTH_MASK:
+            if direction_mask == NORTH_MASK:
+                return DIRECTION_B
+            elif direction_mask == EAST_MASK:
+                return DIRECTION_L
+            elif direction_mask == SOUTH_MASK:
+                return DIRECTION_F
+            elif direction_mask == WEST_MASK:
+                return DIRECTION_R
+        if facing_mask == WEST_MASK:
+            if direction_mask == NORTH_MASK:
+                return DIRECTION_R
+            elif direction_mask == EAST_MASK:
+                return DIRECTION_B
+            elif direction_mask == SOUTH_MASK:
+                return DIRECTION_L
+            elif direction_mask == WEST_MASK:
+                return DIRECTION_F
+        raise Exception(f"Unhandled mask {direction_mask} {facing_mask}")
 
     # TODO: use bitwise rotate on direction masks
 
@@ -416,3 +484,44 @@ class Mouse():
             return grid_get_mask(MAZE, x, y, WEST_MASK)
         if self.facing == WEST_MASK:
             return grid_get_mask(MAZE, x, y, NORTH_MASK)
+
+    def move_forward(self) -> None:
+        """Abstraction for moving forward one cell"""
+        if self.facing == NORTH_MASK:
+            self.location = self.get_neighbour(self.location, NORTH_MASK)
+        elif self.facing == EAST_MASK:
+            self.location = self.get_neighbour(self.location, EAST_MASK)
+        elif self.facing == SOUTH_MASK:
+            self.location = self.get_neighbour(self.location, SOUTH_MASK)
+        elif self.facing == WEST_MASK:
+            self.location = self.get_neighbour(self.location, WEST_MASK)
+    def turn_back(self) -> None:
+        """Abstraction for turning back"""
+        if self.facing == NORTH_MASK:
+            self.facing = SOUTH_MASK
+        elif self.facing == EAST_MASK:
+            self.facing = WEST_MASK
+        elif self.facing == SOUTH_MASK:
+            self.facing = NORTH_MASK
+        elif self.facing == WEST_MASK:
+            self.facing = EAST_MASK
+    def turn_left(self) -> None:
+        """Abstraction for turning left"""
+        if self.facing == NORTH_MASK:
+            self.facing = WEST_MASK
+        elif self.facing == EAST_MASK:
+            self.facing = NORTH_MASK
+        elif self.facing == SOUTH_MASK:
+            self.facing = EAST_MASK
+        elif self.facing == WEST_MASK:
+            self.facing = SOUTH_MASK
+    def turn_right(self) -> None:
+        """Abstraction for turning right"""
+        if self.facing == NORTH_MASK:
+            self.facing = EAST_MASK
+        elif self.facing == EAST_MASK:
+            self.facing = SOUTH_MASK
+        elif self.facing == SOUTH_MASK:
+            self.facing = WEST_MASK
+        elif self.facing == WEST_MASK:
+            self.facing = NORTH_MASK
