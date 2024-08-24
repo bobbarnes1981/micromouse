@@ -152,7 +152,7 @@ class App():
             for y in range(grid_y(self.mouse.flood)):
                 num = grid_get(self.mouse.flood, x, y)
                 img = self.font.render(str(num), True, (80,80,80))
-                self._display_surf.blit(img, (x*CELL_SIZE*SCALE, self._height-(y*CELL_SIZE*SCALE)-(CELL_SIZE*SCALE)))
+                self._display_surf.blit(img, ((x*CELL_SIZE*SCALE)+(CELL_SIZE*SCALE/2)-(img.get_width()/2), self._height-(y*CELL_SIZE*SCALE)-(CELL_SIZE*SCALE)+(img.get_height()/2)))
 
         routes = self.mouse.get_routes()
         for route in routes:
