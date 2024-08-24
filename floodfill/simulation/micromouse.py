@@ -173,12 +173,12 @@ class Mouse():
     def get_routes(self):
         """Get the generated route(s)"""
         return self.routes
-    def generate_routes(self, origin, depth, limit):
+    def generate_routes(self, origin, facing, depth, limit):
         """Generate routes to the goal. If there are multiple choices limit branching depth"""
         routes = []
         route = []
         current_loc = origin
-        current_dir = None
+        current_facing = facing
         current_score = 0
         required_val = grid_get(self.flood, current_loc[0], current_loc[1])
         while current_loc:
@@ -188,20 +188,20 @@ class Mouse():
             if len(directions) == 0:
                 # no directions
                 current_loc = None
-                current_dir = None
+                current_facing = None
                 routes.append({'score':current_score,'route':route})
             elif len(directions) == 1:
                 # single direction
                 if directions[0]['value'] == required_val:
                     # correct value
                     current_loc = directions[0]['coord']
-                    if current_dir != directions[0]['dir']:
+                    if current_facing != directions[0]['dir']:
                         current_score+=1
-                    current_dir = directions[0]['dir']
+                    current_facing = directions[0]['dir']
                 else:
                     # wrong value
                     current_loc = None
-                    current_dir = None
+                    current_facing = None
                     routes.append({'score':current_score,'route':route})
             else:
                 # multiple directions
@@ -209,37 +209,37 @@ class Mouse():
                     # multiple routes
                     if depth < limit and directions[0]['value'] == required_val:
                         current_loc = None
-                        current_dir = None
+                        current_facing = None
                         # correct value
                         for direction in directions:
                             if directions[0]['value'] == direction['value']:
-                                sub_routes = self.generate_routes(direction['coord'], depth+1, limit)
+                                sub_routes = self.generate_routes(direction['coord'], current_facing, depth+1, limit)
                                 for sub_route in sub_routes:
                                     routes.append({'score':current_score+sub_route['score'],'route':route+sub_route['route']})
                     else:
                         # wrong value
                         current_loc = None
-                        current_dir = None
+                        current_facing = None
                         routes.append({'score':current_score,'route':route})
                 else:
                     # single route
                     if directions[0]['value'] == required_val:
                         # correct value
                         current_loc = directions[0]['coord']
-                        if current_dir != directions[0]['dir']:
+                        if current_facing != directions[0]['dir']:
                             # increase score if we make a turn, lowest score is best
                             current_score+=1
-                        current_dir = directions[0]['dir']
+                        current_facing = directions[0]['dir']
                     else:
                         # wrong value
                         current_loc = None
-                        current_dir = None
+                        current_facing = None
                         routes.append({'score':current_score,'route':route})
         return routes
 
     def generate_best_routes_for_origin(self):
         """Generate routes and select the best"""
-        routes = self.generate_routes(self.current_origin, 0, 8)
+        routes = self.generate_routes(self.current_origin, NORTH_MASK, 0, 8)
         successful_routes = []
         # check for routes that reach the goal
         for route in routes:
