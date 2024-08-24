@@ -3,7 +3,7 @@ import pygame
 import time
 import micromouse
 
-from constants import MAZE, MAZE_X, MAZE_Y
+from maze import MAZE_X, MAZE_Y
 from grid import grid_get_mask, grid_x, grid_y, grid_get
 
 SCALE = 2
@@ -12,10 +12,11 @@ CELL_SIZE = 18
 
 class App():
     """Runs the simulation"""
-    def __init__(self):
+    def __init__(self, maze):
+        self.maze = maze
         self._delay = 0.03
 
-        self.mouse = micromouse.Mouse()
+        self.mouse = micromouse.Mouse(self.maze)
 
         self._running = True
         self._display_surf = None
@@ -57,8 +58,8 @@ class App():
     def on_render(self) -> None:
         """On render."""
         self._display_surf.fill((0,0,0))
-        for x in range(grid_x(MAZE)):
-            for y in range(grid_y(MAZE)):
+        for x in range(grid_x(self.maze)):
+            for y in range(grid_y(self.maze)):
                 thickness = 1
 
                 # render physical walls
@@ -68,13 +69,13 @@ class App():
                 bot = top + (CELL_SIZE*SCALE) - 1
 
                 colour = (80,0,0)
-                if grid_get_mask(MAZE, x, y, micromouse.NORTH_MASK):
+                if grid_get_mask(self.maze, x, y, micromouse.NORTH_MASK):
                     pygame.draw.line(self._display_surf, colour, (left,top), (right,top), thickness)
-                if grid_get_mask(MAZE, x, y, micromouse.EAST_MASK):
+                if grid_get_mask(self.maze, x, y, micromouse.EAST_MASK):
                     pygame.draw.line(self._display_surf, colour, (right,top), (right,bot), thickness)
-                if grid_get_mask(MAZE, x, y, micromouse.SOUTH_MASK):
+                if grid_get_mask(self.maze, x, y, micromouse.SOUTH_MASK):
                     pygame.draw.line(self._display_surf, colour, (right,bot), (left,bot), thickness)
-                if grid_get_mask(MAZE, x, y, micromouse.WEST_MASK):
+                if grid_get_mask(self.maze, x, y, micromouse.WEST_MASK):
                     pygame.draw.line(self._display_surf, colour, (left,bot), (left,top), thickness)
                 
                 # render detected walls

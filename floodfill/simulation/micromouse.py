@@ -1,6 +1,5 @@
 import logging
 
-from constants import MAZE
 from grid import grid_x, grid_y, grid_get, grid_set, grid_coord_valid, grid_get_mask, grid_set_mask
 
 FLOOD_EMPTY = -1
@@ -45,7 +44,9 @@ class Mouse():
     width = 8
     height = 10
     """Represents the micromouse"""
-    def __init__(self):
+    def __init__(self, maze):
+        # Real mouse would not have direct access to maze but we need it for simulation
+        self.maze = maze
         self.location = (0,0)
         self.facing = NORTH_MASK
         self.state = MOUSE_STATE_PROCESSING
@@ -349,6 +350,8 @@ class Mouse():
         directions = self.get_directions(self.location[0], self.location[1], self.facing)
         self.move_relative(directions[0]['rel_dir'])
 
+    # TODO: maybe simulate pixel level movement
+
     def move_relative(self, relative_direction) -> None:
         if relative_direction == DIRECTION_F:
             self.move_forward()
@@ -454,37 +457,37 @@ class Mouse():
         x = self.location[0]
         y = self.location[1]
         if self.facing == NORTH_MASK:
-            return grid_get_mask(MAZE, x, y, WEST_MASK)
+            return grid_get_mask(self.maze, x, y, WEST_MASK)
         if self.facing == EAST_MASK:
-            return grid_get_mask(MAZE, x, y, NORTH_MASK)
+            return grid_get_mask(self.maze, x, y, NORTH_MASK)
         if self.facing == SOUTH_MASK:
-            return grid_get_mask(MAZE, x, y, EAST_MASK)
+            return grid_get_mask(self.maze, x, y, EAST_MASK)
         if self.facing == WEST_MASK:
-            return grid_get_mask(MAZE, x, y, SOUTH_MASK)
+            return grid_get_mask(self.maze, x, y, SOUTH_MASK)
     def read_front_sensor(self) -> bool:
         """Abstraction for reading front sensor"""
         x = self.location[0]
         y = self.location[1]
         if self.facing == NORTH_MASK:
-            return grid_get_mask(MAZE, x, y, NORTH_MASK)
+            return grid_get_mask(self.maze, x, y, NORTH_MASK)
         if self.facing == EAST_MASK:
-            return grid_get_mask(MAZE, x, y, EAST_MASK)
+            return grid_get_mask(self.maze, x, y, EAST_MASK)
         if self.facing == SOUTH_MASK:
-            return grid_get_mask(MAZE, x, y, SOUTH_MASK)
+            return grid_get_mask(self.maze, x, y, SOUTH_MASK)
         if self.facing == WEST_MASK:
-            return grid_get_mask(MAZE, x, y, WEST_MASK)
+            return grid_get_mask(self.maze, x, y, WEST_MASK)
     def read_right_sensor(self) -> bool:
         """Abstraction for reading right sensor"""
         x = self.location[0]
         y = self.location[1]
         if self.facing == NORTH_MASK:
-            return grid_get_mask(MAZE, x, y, EAST_MASK)
+            return grid_get_mask(self.maze, x, y, EAST_MASK)
         if self.facing == EAST_MASK:
-            return grid_get_mask(MAZE, x, y, SOUTH_MASK)
+            return grid_get_mask(self.maze, x, y, SOUTH_MASK)
         if self.facing == SOUTH_MASK:
-            return grid_get_mask(MAZE, x, y, WEST_MASK)
+            return grid_get_mask(self.maze, x, y, WEST_MASK)
         if self.facing == WEST_MASK:
-            return grid_get_mask(MAZE, x, y, NORTH_MASK)
+            return grid_get_mask(self.maze, x, y, NORTH_MASK)
 
     def move_forward(self) -> None:
         """Abstraction for moving forward one cell"""
