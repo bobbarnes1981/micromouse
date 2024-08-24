@@ -301,16 +301,16 @@ class Mouse():
 
     def get_directions(self, x: int, y: int):
         directions = []
-        dir = self.check_north(x, y)
+        dir = self.get_accessible_value(x, y, NORTH_MASK)
         if dir:
             directions.append(dir)
-        dir = self.check_east(x, y)
+        dir = self.get_accessible_value(x, y, EAST_MASK)
         if dir:
             directions.append(dir)
-        dir = self.check_south(x, y)
+        dir = self.get_accessible_value(x, y, SOUTH_MASK)
         if dir:
             directions.append(dir)
-        dir = self.check_west(x, y)
+        dir = self.get_accessible_value(x, y, WEST_MASK)
         if dir:
             directions.append(dir)
         if len(directions) == 0:
@@ -406,6 +406,13 @@ class Mouse():
     def get_wall(self, location, direction_mask) -> bool:
         return grid_get_mask(self.map, location[0], location[1], direction_mask)
 
+    def get_accessible_value(self, x: int, y: int, direction_mask: int) -> dict:
+        neighbour = self.get_neighbour((x, y), direction_mask)
+        if neighbour:
+            if not self.get_wall((x,y),direction_mask): # TODO: do we need to check walls?
+                num = grid_get(self.flood, neighbour[0], neighbour[1])
+                return {'value': num, 'coord':neighbour, 'dir':direction_mask}
+        return None
     def check_north(self, x: int, y: int):
         _x = x
         _y = y+1
