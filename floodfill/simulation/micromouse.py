@@ -413,34 +413,6 @@ class Mouse():
                 num = grid_get(self.flood, neighbour[0], neighbour[1])
                 return {'value': num, 'coord':neighbour, 'dir':direction_mask}
         return None
-    def check_north(self, x: int, y: int):
-        _x = x
-        _y = y+1
-        if grid_coord_valid(self.map, _x, _y) and not self.get_wall((x,y),NORTH_MASK): # TODO: do we need to check walls?
-            num = grid_get(self.flood, _x, _y)
-            return {'value': num, 'coord':(_x,_y), 'dir':NORTH_MASK}
-        return None
-    def check_east(self, x: int, y: int):
-        _x = x+1
-        _y = y
-        if grid_coord_valid(self.map, _x, _y) and not self.get_wall((x,y),EAST_MASK): # TODO: do we need to check walls?
-            num = grid_get(self.flood, _x, _y)
-            return {'value': num, 'coord':(_x,_y), 'dir':EAST_MASK}
-        return None
-    def check_south(self, x: int, y: int):
-        _x = x
-        _y = y-1
-        if grid_coord_valid(self.map, _x, _y) and not self.get_wall((x,y),SOUTH_MASK): # TODO: do we need to check walls?
-            num = grid_get(self.flood, _x, _y)
-            return {'value': num, 'coord':(_x,_y), 'dir':SOUTH_MASK}
-        return None
-    def check_west(self, x: int, y: int):
-        _x = x-1
-        _y = y
-        if grid_coord_valid(self.map, _x, _y) and not self.get_wall((x,y),WEST_MASK): # TODO: do we need to check walls?
-            num = grid_get(self.flood, _x, _y)
-            return {'value': num, 'coord':(_x,_y), 'dir':WEST_MASK}
-        return None
 
     # TODO: use bitwise rotate on direction masks
 
