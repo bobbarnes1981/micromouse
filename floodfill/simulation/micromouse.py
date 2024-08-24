@@ -100,6 +100,7 @@ class Mouse():
         self.current_origin = origin
         self.current_targets = targets
         self.flood_map(self.current_targets)
+        self.routes = self.generate_best_routes_for_origin()
 
     def flood_map(self, targets: list[tuple]):
         """Flood the map"""
