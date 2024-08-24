@@ -344,42 +344,6 @@ class Mouse():
                     self.set_wall(neighbour, _direction_mask)
                 return 1
         return 0
-    def scan_east(self, scanner: callable) -> int:
-        if self.need_to_scan(self.location, EAST_CHECKED_MASK):
-            self.set_scanned(self.location, EAST_CHECKED_MASK)
-            neighbour = self.get_neighbour(self.location, EAST_MASK)
-            if neighbour:
-                self.set_scanned(neighbour, WEST_CHECKED_MASK)
-            if scanner():
-                self.set_wall(self.location, EAST_MASK)
-                if neighbour:
-                    self.set_wall(neighbour, WEST_MASK)
-                return 1
-        return 0
-    def scan_south(self, scanner: callable) -> int:
-        if self.need_to_scan(self.location, SOUTH_CHECKED_MASK):
-            self.set_scanned(self.location, SOUTH_CHECKED_MASK)
-            neighbour = self.get_neighbour(self.location, SOUTH_MASK)
-            if neighbour:
-                self.set_scanned(neighbour, NORTH_CHECKED_MASK)
-            if scanner():
-                self.set_wall(self.location, SOUTH_MASK)
-                if neighbour:
-                    self.set_wall(neighbour, NORTH_MASK)
-                return 1
-        return 0
-    def scan_west(self, scanner: callable) -> int:
-        if self.need_to_scan(self.location, WEST_CHECKED_MASK):
-            self.set_scanned(self.location, WEST_CHECKED_MASK)
-            neighbour = self.get_neighbour(self.location, WEST_MASK)
-            if neighbour:
-                self.set_scanned(neighbour, EAST_CHECKED_MASK)
-            if scanner():
-                self.set_wall(self.location, WEST_MASK)
-                if neighbour:
-                    self.set_wall(neighbour, EAST_MASK)
-                return 1
-        return 0
 
     def need_to_scan(self, location, direction_checked_mask) -> bool:
         return not grid_get_mask(self.map, location[0], location[1], direction_checked_mask)
