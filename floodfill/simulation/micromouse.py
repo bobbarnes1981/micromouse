@@ -15,9 +15,8 @@ EAST_CHECKED_MASK = 0x20
 SOUTH_CHECKED_MASK = 0x40
 WEST_CHECKED_MASK = 0x80
 
-MOUSE_STATE_SCAN = 1
-MOUSE_STATE_FLOOD = 2
-MOUSE_STATE_MOVE = 3
+MOUSE_STATE_PROCESSING = 1
+MOUSE_STATE_MOVING = 2
 
 MOUSE_MODE_SEARCH_1 = 1
 MOUSE_MODE_RETURN_TO_START_1 = 2
@@ -32,7 +31,7 @@ class Mouse():
     def __init__(self):
         self.location = (0,0)
         self.facing = NORTH_MASK
-        self.state = MOUSE_STATE_SCAN
+        self.state = MOUSE_STATE_PROCESSING
         self.mode = MOUSE_MODE_SEARCH_1
         self.map = [
             [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
@@ -115,15 +114,16 @@ class Mouse():
                     self.queue.append((x, y))
     def tick(self):
         logging.debug('mouse tick')
-        if self.state == MOUSE_STATE_SCAN:
-            self.scan()
-            self.state = MOUSE_STATE_FLOOD
-        elif self.state == MOUSE_STATE_FLOOD:
-            self.flood_map(self.current_targets)
-            self.state = MOUSE_STATE_MOVE
-        elif self.state == MOUSE_STATE_MOVE:
+        if self.state == MOUSE_STATE_PROCESSING:
+            changes = self.scan()
+            if changes:
+                self.flood_map(self.current_targets)
+                self.routes = self.generate_best_routes_for_origin()
+            self.state = MOUSE_STATE_MOVING
+        elif self.state == MOUSE_STATE_MOVING:
             self.move()
-            self.state = MOUSE_STATE_SCAN
+            self.state = MOUSE_STATE_PROCESSING
+
         if self.mode == MOUSE_MODE_SEARCH_1:
             logging.info('search 1')
             if grid_get(self.flood, self.location[0], self.location[1]) == 0:
@@ -158,24 +158,6 @@ class Mouse():
             pass
     def get_routes(self):
         return self.routes
-    def generate_routes_for_current_origin(self):
-        routes = self.generate_routes(self.current_origin, 0, 8)
-        filtered_routes = []
-        # check for completed routes
-        for route in routes:
-            coord = route['route'][-1]
-            if grid_get(self.flood, coord[0], coord[1]) == 0:
-                filtered_routes.append(route)
-        if len(filtered_routes) == 0:
-            # no completed routes
-            return [r['route'] for r in routes]
-        elif len(filtered_routes) == 1:
-            # single complete route
-            return [r['route'] for r in filtered_routes]
-        else:
-            # multiple complete routes
-            filtered_routes.sort(key=lambda x: x['score'], reverse=False) # sort ascending
-            return [filtered_routes[0]['route']]
     def generate_routes(self, origin, depth, limit):
         routes = []
         route = []
@@ -237,24 +219,44 @@ class Mouse():
                         current_dir = None
                         routes.append({'score':current_score,'route':route})
         return routes
-    def scan(self):
+    def generate_best_routes_for_origin(self):
+        routes = self.generate_routes(self.current_origin, 0, 8)
+        filtered_routes = []
+        # check for completed routes
+        for route in routes:
+            coord = route['route'][-1]
+            if grid_get(self.flood, coord[0], coord[1]) == 0:
+                filtered_routes.append(route)
+        if len(filtered_routes) == 0:
+            # no completed routes
+            return [r['route'] for r in routes]
+        elif len(filtered_routes) == 1:
+            # single complete route
+            return [r['route'] for r in filtered_routes]
+        else:
+            # multiple complete routes
+            filtered_routes.sort(key=lambda x: x['score'], reverse=False) # sort ascending
+            return [filtered_routes[0]['route']]
+    def scan(self) -> int:
         logging.debug("check for walls")
+        changes = 0
         if self.facing == NORTH_MASK:
-            self.scan_west(self.location[0], self.location[1])
-            self.scan_north(self.location[0], self.location[1])
-            self.scan_east(self.location[0], self.location[1])
+            changes += self.scan_west(self.location[0], self.location[1])
+            changes += self.scan_north(self.location[0], self.location[1])
+            changes += self.scan_east(self.location[0], self.location[1])
         if self.facing == EAST_MASK:
-            self.scan_north(self.location[0], self.location[1])
-            self.scan_east(self.location[0], self.location[1])
-            self.scan_south(self.location[0], self.location[1])
+            changes += self.scan_north(self.location[0], self.location[1])
+            changes += self.scan_east(self.location[0], self.location[1])
+            changes += self.scan_south(self.location[0], self.location[1])
         if self.facing == SOUTH_MASK:
-            self.scan_east(self.location[0], self.location[1])
-            self.scan_south(self.location[0], self.location[1])
-            self.scan_west(self.location[0], self.location[1])
+            changes += self.scan_east(self.location[0], self.location[1])
+            changes += self.scan_south(self.location[0], self.location[1])
+            changes += self.scan_west(self.location[0], self.location[1])
         if self.facing == WEST_MASK:
-            self.scan_south(self.location[0], self.location[1])
-            self.scan_west(self.location[0], self.location[1])
-            self.scan_north(self.location[0], self.location[1])
+            changes += self.scan_south(self.location[0], self.location[1])
+            changes += self.scan_west(self.location[0], self.location[1])
+            changes += self.scan_north(self.location[0], self.location[1])
+        return changes
     def get_directions(self, x: int, y: int):
         directions = []
         dir = self.check_north(x, y)
@@ -280,7 +282,7 @@ class Mouse():
         if direction['dir'] != self.facing:
             self.facing = direction['dir']
         self.location = direction['coord']
-    def scan_north(self, x: int, y :int):
+    def scan_north(self, x: int, y :int) -> int:
         if grid_get(self.map, x, y) & NORTH_CHECKED_MASK != NORTH_CHECKED_MASK:
             _x = x
             _y = y+1
@@ -291,7 +293,9 @@ class Mouse():
                 grid_set(self.map, x, y, grid_get(self.map, x, y) | NORTH_MASK)
                 if grid_coord_valid(self.map, _x, _y):
                     grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | SOUTH_MASK)
-    def scan_east(self, x: int, y: int):
+                return 1
+        return 0
+    def scan_east(self, x: int, y: int) -> int:
         if grid_get(self.map, x, y) & EAST_CHECKED_MASK != EAST_CHECKED_MASK:
             _x = x+1
             _y = y
@@ -302,7 +306,9 @@ class Mouse():
                 grid_set(self.map, x, y, grid_get(self.map, x, y) | EAST_MASK)
                 if grid_coord_valid(self.map, _x, _y):
                     grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | WEST_MASK)
-    def scan_south(self, x: int, y :int):
+                return 1
+        return 0
+    def scan_south(self, x: int, y :int) -> int:
         if grid_get(self.map, x, y) & SOUTH_CHECKED_MASK != SOUTH_CHECKED_MASK:
             _x = x
             _y = y-1
@@ -313,7 +319,9 @@ class Mouse():
                 grid_set(self.map, x, y, grid_get(self.map, x, y) | SOUTH_MASK)
                 if grid_coord_valid(self.map, _x, _y):
                     grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | NORTH_MASK)
-    def scan_west(self, x: int, y: int) -> bool:
+                return 1
+        return 0
+    def scan_west(self, x: int, y: int) -> int:
         if grid_get(self.map, x, y) & WEST_CHECKED_MASK != WEST_CHECKED_MASK:
             _x = x-1
             _y = y
@@ -324,6 +332,8 @@ class Mouse():
                 grid_set(self.map, x, y, grid_get(self.map, x, y) | WEST_MASK)
                 if grid_coord_valid(self.map, _x, _y):
                     grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | EAST_MASK)
+                return 1
+        return 0
     def check_north(self, x: int, y: int):
         # check north
         _x = x
