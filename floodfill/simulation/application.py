@@ -4,7 +4,7 @@ import time
 import micromouse
 
 from constants import MAZE, MAZE_X, MAZE_Y
-from grid import grid_check_mask, grid_x, grid_y, grid_get
+from grid import grid_get_mask, grid_x, grid_y, grid_get
 
 SCALE = 2
 
@@ -68,13 +68,13 @@ class App():
                 bot = top + (CELL_SIZE*SCALE) - 1
 
                 colour = (80,0,0)
-                if grid_check_mask(MAZE, x, y, micromouse.NORTH_MASK):
+                if grid_get_mask(MAZE, x, y, micromouse.NORTH_MASK):
                     pygame.draw.line(self._display_surf, colour, (left,top), (right,top), thickness)
-                if grid_check_mask(MAZE, x, y, micromouse.EAST_MASK):
+                if grid_get_mask(MAZE, x, y, micromouse.EAST_MASK):
                     pygame.draw.line(self._display_surf, colour, (right,top), (right,bot), thickness)
-                if grid_check_mask(MAZE, x, y, micromouse.SOUTH_MASK):
+                if grid_get_mask(MAZE, x, y, micromouse.SOUTH_MASK):
                     pygame.draw.line(self._display_surf, colour, (right,bot), (left,bot), thickness)
-                if grid_check_mask(MAZE, x, y, micromouse.WEST_MASK):
+                if grid_get_mask(MAZE, x, y, micromouse.WEST_MASK):
                     pygame.draw.line(self._display_surf, colour, (left,bot), (left,top), thickness)
                 
                 # render detected walls
@@ -83,16 +83,16 @@ class App():
                 mright = right-moffset
                 mtop = top+moffset
                 mbot = bot-moffset
-                if grid_check_mask(self.mouse.map, x, y, micromouse.NORTH_MASK):
+                if grid_get_mask(self.mouse.map, x, y, micromouse.NORTH_MASK):
                     colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mleft,mtop), (mright,mtop), thickness)
-                if grid_check_mask(self.mouse.map, x, y, micromouse.EAST_MASK):
+                if grid_get_mask(self.mouse.map, x, y, micromouse.EAST_MASK):
                     colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mright,mtop), (mright,mbot), thickness)
-                if grid_check_mask(self.mouse.map, x, y, micromouse.SOUTH_MASK):
+                if grid_get_mask(self.mouse.map, x, y, micromouse.SOUTH_MASK):
                     colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mright,mbot), (mleft,mbot), thickness)
-                if grid_check_mask(self.mouse.map, x, y, micromouse.WEST_MASK):
+                if grid_get_mask(self.mouse.map, x, y, micromouse.WEST_MASK):
                     colour = (255,0,0)
                     pygame.draw.line(self._display_surf, colour, (mleft,mbot), (mleft,mtop), thickness)
 

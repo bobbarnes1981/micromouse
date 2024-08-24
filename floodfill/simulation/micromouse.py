@@ -1,7 +1,7 @@
 import logging
 
 from constants import MAZE
-from grid import grid_x, grid_y, grid_get, grid_set, grid_coord_valid, grid_check_mask
+from grid import grid_x, grid_y, grid_get, grid_set, grid_coord_valid, grid_get_mask, grid_set_mask
 
 FLOOD_EMPTY = -1
 
@@ -73,17 +73,21 @@ class Mouse():
         ]
         self.route_step = 0
         self.queue = []
-        self.routes = [] # TODO: real mouse would onyl care about the best route but simulation wants to show multiple options
+        self.routes = [] # TODO: real mouse would only care about the best route but simulation wants to show multiple options
         self.start_target = (0,0)
         self.goal_targets = [(7,7),(7,8),(8,7),(8,8)]
         self.current_origin = None
         self.current_targets = None
         self.set_origin_and_targets(self.start_target, self.goal_targets)
+
     def set_origin_and_targets(self, origin: tuple, targets: list[tuple]):
+        """Set the current origin and targets, used for route planning"""
         self.current_origin = origin
         self.current_targets = targets
         self.flood_map(self.current_targets)
+
     def flood_map(self, targets: list[tuple]):
+        """Flood the map"""
         # clear
         for x in range(grid_x(self.flood)):
             for y in range(grid_y(self.flood)):
@@ -98,28 +102,29 @@ class Mouse():
             score = grid_get(self.flood, coord[0], coord[1])
             x = coord[0]
             y = coord[1]+1
-            if grid_coord_valid(self.flood, x, y) and not self.wall_north(coord[0], coord[1]):
+            if grid_coord_valid(self.flood, x, y) and not self.get_wall(coord, NORTH_MASK):
                 if grid_get(self.flood, x, y) == FLOOD_EMPTY:
                     grid_set(self.flood, x, y, score+1)
                     self.queue.append((x, y))
             x = coord[0]+1
             y = coord[1]
-            if grid_coord_valid(self.flood, x, y) and not self.wall_east(coord[0], coord[1]):
+            if grid_coord_valid(self.flood, x, y) and not self.get_wall(coord, EAST_MASK):
                 if grid_get(self.flood, x, y) == FLOOD_EMPTY:
                     grid_set(self.flood, x, y, score+1)
                     self.queue.append((x, y))
             x = coord[0]
             y = coord[1]-1
-            if grid_coord_valid(self.flood, x, y) and not self.wall_south(coord[0], coord[1]):
+            if grid_coord_valid(self.flood, x, y) and not self.get_wall(coord, SOUTH_MASK):
                 if grid_get(self.flood, x, y) == FLOOD_EMPTY:
                     grid_set(self.flood, x, y, score+1)
                     self.queue.append((x, y))
             x = coord[0]-1
             y = coord[1]
-            if grid_coord_valid(self.flood, x, y) and not self.wall_west(coord[0], coord[1]):
+            if grid_coord_valid(self.flood, x, y) and not self.get_wall(coord, WEST_MASK):
                 if grid_get(self.flood, x, y) == FLOOD_EMPTY:
                     grid_set(self.flood, x, y, score+1)
                     self.queue.append((x, y))
+
     def tick(self):
         logging.debug('mouse tick')
         if self.state == MOUSE_STATE_PROCESSING:
@@ -164,9 +169,12 @@ class Mouse():
                 self.state = MOUSE_STATE_DONE
         elif self.mode == MOUSE_MODE_DONE:
             pass
+
     def get_routes(self):
+        """Get the generated route(s)"""
         return self.routes
     def generate_routes(self, origin, depth, limit):
+        """Generate routes to the goal. If there are multiple choices limit branching depth"""
         routes = []
         route = []
         current_loc = origin
@@ -228,7 +236,9 @@ class Mouse():
                         current_dir = None
                         routes.append({'score':current_score,'route':route})
         return routes
+
     def generate_best_routes_for_origin(self):
+        """Generate routes and select the best"""
         routes = self.generate_routes(self.current_origin, 0, 8)
         successful_routes = []
         # check for routes that reach the goal
@@ -246,26 +256,49 @@ class Mouse():
             # multiple complete routes, return best score
             successful_routes.sort(key=lambda x: x['score'], reverse=False) # sort ascending
             return [successful_routes[0]['route']]
+
     def scan(self) -> int:
+        """Scan for walls"""
         logging.debug("check for walls")
         changes = 0
-        if self.facing == NORTH_MASK:
-            changes += self.scan_west(self.location[0], self.location[1])
-            changes += self.scan_north(self.location[0], self.location[1])
-            changes += self.scan_east(self.location[0], self.location[1])
-        if self.facing == EAST_MASK:
-            changes += self.scan_north(self.location[0], self.location[1])
-            changes += self.scan_east(self.location[0], self.location[1])
-            changes += self.scan_south(self.location[0], self.location[1])
-        if self.facing == SOUTH_MASK:
-            changes += self.scan_east(self.location[0], self.location[1])
-            changes += self.scan_south(self.location[0], self.location[1])
-            changes += self.scan_west(self.location[0], self.location[1])
-        if self.facing == WEST_MASK:
-            changes += self.scan_south(self.location[0], self.location[1])
-            changes += self.scan_west(self.location[0], self.location[1])
-            changes += self.scan_north(self.location[0], self.location[1])
+        changes += self.scan_left()
+        changes += self.scan_front()
+        changes += self.scan_right()
         return changes
+    def scan_left(self) -> int:
+        changes = 0
+        if self.facing == NORTH_MASK:
+            changes += self.scan_direction(self.read_left_sensor, WEST_CHECKED_MASK, WEST_MASK, EAST_CHECKED_MASK, EAST_MASK)
+        if self.facing == EAST_MASK:
+            changes += self.scan_direction(self.read_left_sensor, NORTH_CHECKED_MASK, NORTH_MASK, SOUTH_CHECKED_MASK, SOUTH_MASK)
+        if self.facing == SOUTH_MASK:
+            changes += self.scan_direction(self.read_left_sensor, EAST_CHECKED_MASK, EAST_MASK, WEST_CHECKED_MASK, WEST_MASK)
+        if self.facing == WEST_MASK:
+            changes += self.scan_direction(self.read_left_sensor, SOUTH_CHECKED_MASK, SOUTH_MASK, NORTH_CHECKED_MASK, NORTH_MASK)
+        return changes
+    def scan_front(self) -> int:
+        changes = 0
+        if self.facing == NORTH_MASK:
+            changes += self.scan_direction(self.read_front_sensor, NORTH_CHECKED_MASK, NORTH_MASK, SOUTH_CHECKED_MASK, SOUTH_MASK)
+        if self.facing == EAST_MASK:
+            changes += self.scan_direction(self.read_front_sensor, EAST_CHECKED_MASK, EAST_MASK, WEST_CHECKED_MASK, WEST_MASK)
+        if self.facing == SOUTH_MASK:
+            changes += self.scan_direction(self.read_front_sensor, SOUTH_CHECKED_MASK, SOUTH_MASK, NORTH_CHECKED_MASK, NORTH_MASK)
+        if self.facing == WEST_MASK:
+            changes += self.scan_direction(self.read_front_sensor, WEST_CHECKED_MASK, WEST_MASK, EAST_CHECKED_MASK, EAST_MASK)
+        return changes
+    def scan_right(self) -> int:
+        changes = 0
+        if self.facing == NORTH_MASK:
+            changes += self.scan_direction(self.read_right_sensor, EAST_CHECKED_MASK, EAST_MASK, WEST_CHECKED_MASK, WEST_MASK)
+        if self.facing == EAST_MASK:
+            changes += self.scan_direction(self.read_right_sensor, SOUTH_CHECKED_MASK, SOUTH_MASK, NORTH_CHECKED_MASK, NORTH_MASK)
+        if self.facing == SOUTH_MASK:
+            changes += self.scan_direction(self.read_right_sensor, WEST_CHECKED_MASK, WEST_MASK, EAST_CHECKED_MASK, EAST_MASK)
+        if self.facing == WEST_MASK:
+            changes += self.scan_direction(self.read_right_sensor, NORTH_CHECKED_MASK, NORTH_MASK, SOUTH_CHECKED_MASK, SOUTH_MASK)
+        return changes
+
     def get_directions(self, x: int, y: int):
         directions = []
         dir = self.check_north(x, y)
@@ -284,10 +317,12 @@ class Mouse():
             raise Exception("No direction")
         directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
         return directions
+
     def move_fast(self) -> bool:
         # assuming there is one generated optimal route
         if self.route_step < len(self.routes[0]):
             self.location = self.routes[0][self.route_step]
+            # TODO: facing needs updating
             self.route_step += 1
     def move_scanning(self):
         logging.debug("move")
@@ -296,95 +331,145 @@ class Mouse():
         if direction['dir'] != self.facing:
             self.facing = direction['dir']
         self.location = direction['coord']
-    def scan_north(self, x: int, y :int) -> int:
-        if grid_get(self.map, x, y) & NORTH_CHECKED_MASK != NORTH_CHECKED_MASK:
-            _x = x
-            _y = y+1
-            grid_set(self.map, x, y, grid_get(self.map, x, y) | NORTH_CHECKED_MASK)
-            if grid_coord_valid(self.map, _x, _y):
-                grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | SOUTH_CHECKED_MASK)
-            if grid_get(MAZE, x, y) & NORTH_MASK == NORTH_MASK:
-                grid_set(self.map, x, y, grid_get(self.map, x, y) | NORTH_MASK)
-                if grid_coord_valid(self.map, _x, _y):
-                    grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | SOUTH_MASK)
+
+    def scan_direction(self, scanner: callable, direction_checked_mask, direction_mask, _direction_checked_mask, _direction_mask) -> int:
+        if self.need_to_scan(self.location, direction_checked_mask):
+            self.set_scanned(self.location, direction_checked_mask)
+            neighbour = self.get_neighbour(self.location, direction_mask)
+            if neighbour:
+                self.set_scanned(neighbour, _direction_checked_mask)
+            if scanner():
+                self.set_wall(self.location, direction_mask)
+                if neighbour:
+                    self.set_wall(neighbour, _direction_mask)
                 return 1
         return 0
-    def scan_east(self, x: int, y: int) -> int:
-        if grid_get(self.map, x, y) & EAST_CHECKED_MASK != EAST_CHECKED_MASK:
-            _x = x+1
-            _y = y
-            grid_set(self.map, x, y, grid_get(self.map, x, y) | EAST_CHECKED_MASK)
-            if grid_coord_valid(self.map, _x, _y):
-                grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | WEST_CHECKED_MASK)
-            if grid_get(MAZE, x, y) & EAST_MASK == EAST_MASK:
-                grid_set(self.map, x, y, grid_get(self.map, x, y) | EAST_MASK)
-                if grid_coord_valid(self.map, _x, _y):
-                    grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | WEST_MASK)
+    def scan_east(self, scanner: callable) -> int:
+        if self.need_to_scan(self.location, EAST_CHECKED_MASK):
+            self.set_scanned(self.location, EAST_CHECKED_MASK)
+            neighbour = self.get_neighbour(self.location, EAST_MASK)
+            if neighbour:
+                self.set_scanned(neighbour, WEST_CHECKED_MASK)
+            if scanner():
+                self.set_wall(self.location, EAST_MASK)
+                if neighbour:
+                    self.set_wall(neighbour, WEST_MASK)
                 return 1
         return 0
-    def scan_south(self, x: int, y :int) -> int:
-        if grid_get(self.map, x, y) & SOUTH_CHECKED_MASK != SOUTH_CHECKED_MASK:
-            _x = x
-            _y = y-1
-            grid_set(self.map, x, y, grid_get(self.map, x, y) | SOUTH_CHECKED_MASK)
-            if grid_coord_valid(self.map, _x, _y):
-                grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | NORTH_CHECKED_MASK)
-            if grid_get(MAZE, x, y) & SOUTH_MASK == SOUTH_MASK:
-                grid_set(self.map, x, y, grid_get(self.map, x, y) | SOUTH_MASK)
-                if grid_coord_valid(self.map, _x, _y):
-                    grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | NORTH_MASK)
+    def scan_south(self, scanner: callable) -> int:
+        if self.need_to_scan(self.location, SOUTH_CHECKED_MASK):
+            self.set_scanned(self.location, SOUTH_CHECKED_MASK)
+            neighbour = self.get_neighbour(self.location, SOUTH_MASK)
+            if neighbour:
+                self.set_scanned(neighbour, NORTH_CHECKED_MASK)
+            if scanner():
+                self.set_wall(self.location, SOUTH_MASK)
+                if neighbour:
+                    self.set_wall(neighbour, NORTH_MASK)
                 return 1
         return 0
-    def scan_west(self, x: int, y: int) -> int:
-        if grid_get(self.map, x, y) & WEST_CHECKED_MASK != WEST_CHECKED_MASK:
-            _x = x-1
-            _y = y
-            grid_set(self.map, x, y, grid_get(self.map, x, y) | WEST_CHECKED_MASK)
-            if grid_coord_valid(self.map, _x, _y):
-                grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | EAST_CHECKED_MASK)
-            if grid_get(MAZE, x, y) & WEST_MASK == WEST_MASK:
-                grid_set(self.map, x, y, grid_get(self.map, x, y) | WEST_MASK)
-                if grid_coord_valid(self.map, _x, _y):
-                    grid_set(self.map, _x, _y, grid_get(self.map, _x, _y) | EAST_MASK)
+    def scan_west(self, scanner: callable) -> int:
+        if self.need_to_scan(self.location, WEST_CHECKED_MASK):
+            self.set_scanned(self.location, WEST_CHECKED_MASK)
+            neighbour = self.get_neighbour(self.location, WEST_MASK)
+            if neighbour:
+                self.set_scanned(neighbour, EAST_CHECKED_MASK)
+            if scanner():
+                self.set_wall(self.location, WEST_MASK)
+                if neighbour:
+                    self.set_wall(neighbour, EAST_MASK)
                 return 1
         return 0
+
+    def need_to_scan(self, location, direction_checked_mask) -> bool:
+        return not grid_get_mask(self.map, location[0], location[1], direction_checked_mask)
+    
+    def set_scanned(self, location, direction_checked_mask) -> None:
+        grid_set_mask(self.map, location[0], location[1], direction_checked_mask)
+
+    def get_neighbour(self, location, direction_mask) -> tuple:
+        if direction_mask == NORTH_MASK:
+            neighbour = (location[0], location[1]+1)
+        elif direction_mask == EAST_MASK:
+            neighbour = (location[0]+1, location[1])
+        elif direction_mask == SOUTH_MASK:
+            neighbour = (location[0], location[1]-1)
+        elif direction_mask == WEST_MASK:
+            neighbour = (location[0]-1, location[1])
+        if grid_coord_valid(self.map, neighbour[0], neighbour[1]):
+            return neighbour
+        return None
+
+    def set_wall(self, location, direction_mask) -> None:
+        grid_set_mask(self.map, location[0], location[1], direction_mask)
+
+    def get_wall(self, location, direction_mask) -> bool:
+        return grid_get_mask(self.map, location[0], location[1], direction_mask)
+
     def check_north(self, x: int, y: int):
-        # check north
         _x = x
         _y = y+1
-        if grid_coord_valid(self.map, _x, _y) and not self.wall_north(x,y): # TODO: do we need to check walls?
+        if grid_coord_valid(self.map, _x, _y) and not self.get_wall((x,y),NORTH_MASK): # TODO: do we need to check walls?
             num = grid_get(self.flood, _x, _y)
             return {'value': num, 'coord':(_x,_y), 'dir':NORTH_MASK}
         return None
     def check_east(self, x: int, y: int):
-        # check east
         _x = x+1
         _y = y
-        if grid_coord_valid(self.map, _x, _y) and not self.wall_east(x,y): # TODO: do we need to check walls?
+        if grid_coord_valid(self.map, _x, _y) and not self.get_wall((x,y),EAST_MASK): # TODO: do we need to check walls?
             num = grid_get(self.flood, _x, _y)
             return {'value': num, 'coord':(_x,_y), 'dir':EAST_MASK}
         return None
     def check_south(self, x: int, y: int):
-        # check south
         _x = x
         _y = y-1
-        if grid_coord_valid(self.map, _x, _y) and not self.wall_south(x,y): # TODO: do we need to check walls?
+        if grid_coord_valid(self.map, _x, _y) and not self.get_wall((x,y),SOUTH_MASK): # TODO: do we need to check walls?
             num = grid_get(self.flood, _x, _y)
             return {'value': num, 'coord':(_x,_y), 'dir':SOUTH_MASK}
         return None
     def check_west(self, x: int, y: int):
-        # check west
         _x = x-1
         _y = y
-        if grid_coord_valid(self.map, _x, _y) and not self.wall_west(x,y): # TODO: do we need to check walls?
+        if grid_coord_valid(self.map, _x, _y) and not self.get_wall((x,y),WEST_MASK): # TODO: do we need to check walls?
             num = grid_get(self.flood, _x, _y)
             return {'value': num, 'coord':(_x,_y), 'dir':WEST_MASK}
         return None
-    def wall_north(self, x, y):
-        return grid_check_mask(self.map, x, y, NORTH_MASK)
-    def wall_east(self, x, y):
-        return grid_check_mask(self.map, x, y, EAST_MASK)
-    def wall_south(self, x, y):
-        return grid_check_mask(self.map, x, y, SOUTH_MASK)
-    def wall_west(self, x, y):
-        return grid_check_mask(self.map, x, y, WEST_MASK)
+
+    # TODO: use bitwise rotate on direction masks
+
+    def read_left_sensor(self) -> bool:
+        """Abstraction for reading left sensor"""
+        x = self.location[0]
+        y = self.location[1]
+        if self.facing == NORTH_MASK:
+            return grid_get_mask(MAZE, x, y, WEST_MASK)
+        if self.facing == EAST_MASK:
+            return grid_get_mask(MAZE, x, y, NORTH_MASK)
+        if self.facing == SOUTH_MASK:
+            return grid_get_mask(MAZE, x, y, EAST_MASK)
+        if self.facing == WEST_MASK:
+            return grid_get_mask(MAZE, x, y, SOUTH_MASK)
+    def read_front_sensor(self) -> bool:
+        """Abstraction for reading front sensor"""
+        x = self.location[0]
+        y = self.location[1]
+        if self.facing == NORTH_MASK:
+            return grid_get_mask(MAZE, x, y, NORTH_MASK)
+        if self.facing == EAST_MASK:
+            return grid_get_mask(MAZE, x, y, EAST_MASK)
+        if self.facing == SOUTH_MASK:
+            return grid_get_mask(MAZE, x, y, SOUTH_MASK)
+        if self.facing == WEST_MASK:
+            return grid_get_mask(MAZE, x, y, WEST_MASK)
+    def read_right_sensor(self) -> bool:
+        """Abstraction for reading right sensor"""
+        x = self.location[0]
+        y = self.location[1]
+        if self.facing == NORTH_MASK:
+            return grid_get_mask(MAZE, x, y, EAST_MASK)
+        if self.facing == EAST_MASK:
+            return grid_get_mask(MAZE, x, y, SOUTH_MASK)
+        if self.facing == SOUTH_MASK:
+            return grid_get_mask(MAZE, x, y, WEST_MASK)
+        if self.facing == WEST_MASK:
+            return grid_get_mask(MAZE, x, y, NORTH_MASK)
