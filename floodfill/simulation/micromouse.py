@@ -70,11 +70,16 @@ class Mouse():
             [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
         ]
         self.queue = []
+        self.routes = [] # TODO: real mouse would onylcare about the best route but simulation wants to show multiple options
         self.start_target = (0,0)
         self.goal_targets = [(7,7),(7,8),(8,7),(8,8)]
-        self.current_origin = self.start_target
-        self.current_targets = self.goal_targets
-        self.routes = [] # TODO: real mouse would onylcare about the best route but simulation wants to show multiple options
+        self.current_origin = None
+        self.current_targets = None
+        self.set_origin_and_targets(self.start_target, self.goal_targets)
+    def set_origin_and_targets(self, origin: tuple, targets: list[tuple]):
+        self.current_origin = origin
+        self.current_targets = targets
+        self.flood_map(self.current_targets)
     def flood_map(self, targets: list[tuple]):
         # clear
         for x in range(grid_x(self.flood)):
@@ -128,30 +133,22 @@ class Mouse():
             logging.info('search 1')
             if grid_get(self.flood, self.location[0], self.location[1]) == 0:
                 self.mode = MOUSE_MODE_RETURN_TO_START_1
-                self.current_origin = self.location
-                self.current_targets = [self.start_target]
-                self.flood_map(self.current_targets)
+                self.set_origin_and_targets(self.location, [self.start_target])
         elif self.mode == MOUSE_MODE_RETURN_TO_START_1:
             logging.info('return to start 1')
             if grid_get(self.flood, self.location[0], self.location[1]) == 0:
                 self.mode = MOUSE_MODE_SEARCH_2
-                self.current_origin = self.start_target
-                self.current_targets = self.goal_targets
-                self.flood_map(self.current_targets)
+                self.set_origin_and_targets(self.start_target, self.goal_targets)
         elif self.mode == MOUSE_MODE_SEARCH_2:
             logging.info('search 2')
             if grid_get(self.flood, self.location[0], self.location[1]) == 0:
                 self.mode = MOUSE_MODE_RETURN_TO_START_2
-                self.current_origin = self.location
-                self.current_targets = [self.start_target]
-                self.flood_map(self.current_targets)
+                self.set_origin_and_targets(self.location, [self.start_target])
         elif self.mode == MOUSE_MODE_RETURN_TO_START_2:
             logging.info('return to start 2')
             if grid_get(self.flood, self.location[0], self.location[1]) == 0:
                 self.mode = MOUSE_MODE_FAST_RUN
-                self.current_origin = self.start_target
-                self.current_targets = self.goal_targets
-                self.flood_map(self.current_targets)
+                self.set_origin_and_targets(self.start_target, self.goal_targets)
         elif self.mode == MOUSE_MODE_FAST_RUN:
             logging.info('fast run')
             # TODO: should use optimal route
