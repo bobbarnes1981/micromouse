@@ -73,7 +73,7 @@ class Mouse():
         ]
         self.route_step = 0
         self.queue = []
-        self.routes = [] # TODO: real mouse would onylcare about the best route but simulation wants to show multiple options
+        self.routes = [] # TODO: real mouse would onyl care about the best route but simulation wants to show multiple options
         self.start_target = (0,0)
         self.goal_targets = [(7,7),(7,8),(8,7),(8,8)]
         self.current_origin = None
@@ -219,6 +219,7 @@ class Mouse():
                         # correct value
                         current_loc = directions[0]['coord']
                         if current_dir != directions[0]['dir']:
+                            # increase score if we make a turn, lowest score is best
                             current_score+=1
                         current_dir = directions[0]['dir']
                     else:
@@ -229,22 +230,22 @@ class Mouse():
         return routes
     def generate_best_routes_for_origin(self):
         routes = self.generate_routes(self.current_origin, 0, 8)
-        filtered_routes = []
-        # check for completed routes
+        successful_routes = []
+        # check for routes that reach the goal
         for route in routes:
             coord = route['route'][-1]
             if grid_get(self.flood, coord[0], coord[1]) == 0:
-                filtered_routes.append(route)
-        if len(filtered_routes) == 0:
-            # no completed routes
+                successful_routes.append(route)
+        if len(successful_routes) == 0:
+            # no completed routes, return all routes
             return [r['route'] for r in routes]
-        elif len(filtered_routes) == 1:
-            # single complete route
-            return [r['route'] for r in filtered_routes]
+        elif len(successful_routes) == 1:
+            # single complete route, return it
+            return [r['route'] for r in successful_routes]
         else:
-            # multiple complete routes
-            filtered_routes.sort(key=lambda x: x['score'], reverse=False) # sort ascending
-            return [filtered_routes[0]['route']]
+            # multiple complete routes, return best score
+            successful_routes.sort(key=lambda x: x['score'], reverse=False) # sort ascending
+            return [successful_routes[0]['route']]
     def scan(self) -> int:
         logging.debug("check for walls")
         changes = 0
