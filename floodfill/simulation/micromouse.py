@@ -17,12 +17,14 @@ WEST_CHECKED_MASK = 0x80
 
 MOUSE_STATE_PROCESSING = 1
 MOUSE_STATE_MOVING = 2
+MOUSE_STATE_DONE = 3
 
 MOUSE_MODE_SEARCH_1 = 1
 MOUSE_MODE_RETURN_TO_START_1 = 2
 MOUSE_MODE_SEARCH_2 = 3
 MOUSE_MODE_RETURN_TO_START_2 = 4
 MOUSE_MODE_FAST_RUN = 5
+MOUSE_MODE_DONE = 6
 
 class Mouse():
     width = 8
@@ -69,6 +71,7 @@ class Mouse():
             [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
             [FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY,FLOOD_EMPTY],
         ]
+        self.route_step = 0
         self.queue = []
         self.routes = [] # TODO: real mouse would onylcare about the best route but simulation wants to show multiple options
         self.start_target = (0,0)
@@ -126,8 +129,13 @@ class Mouse():
                 self.routes = self.generate_best_routes_for_origin()
             self.state = MOUSE_STATE_MOVING
         elif self.state == MOUSE_STATE_MOVING:
-            self.move()
-            self.state = MOUSE_STATE_PROCESSING
+            if self.mode == MOUSE_MODE_FAST_RUN:
+                self.move_fast()
+            else:
+                self.move_scanning()
+                self.state = MOUSE_STATE_PROCESSING
+        elif self.state == MOUSE_STATE_DONE:
+            pass
 
         if self.mode == MOUSE_MODE_SEARCH_1:
             logging.info('search 1')
@@ -151,7 +159,10 @@ class Mouse():
                 self.set_origin_and_targets(self.start_target, self.goal_targets)
         elif self.mode == MOUSE_MODE_FAST_RUN:
             logging.info('fast run')
-            # TODO: should use optimal route
+            if grid_get(self.flood, self.location[0], self.location[1]) == 0:
+                self.mode = MOUSE_MODE_DONE
+                self.state = MOUSE_STATE_DONE
+        elif self.mode == MOUSE_MODE_DONE:
             pass
     def get_routes(self):
         return self.routes
@@ -272,7 +283,12 @@ class Mouse():
             raise Exception("No direction")
         directions.sort(key=lambda x: x['value'], reverse=False) # sort ascending
         return directions
-    def move(self):
+    def move_fast(self) -> bool:
+        # assuming there is one generated optimal route
+        if self.route_step < len(self.routes[0]):
+            self.location = self.routes[0][self.route_step]
+            self.route_step += 1
+    def move_scanning(self):
         logging.debug("move")
         directions = self.get_directions(self.location[0], self.location[1])
         direction = directions[0]
