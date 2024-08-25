@@ -24,5 +24,10 @@ if __name__ == '__main__':
     loglevel = getattr(logging, args.logging, None)
     logging.basicConfig(level=loglevel, format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
-    a = application.App(maze.load_maze(args.maze))
+    if args.maze:
+        m = maze.load_maze(args.maze)
+    else:
+        m = maze.DEFAULT_MAZE
+
+    a = application.App(m)
     a.on_execute()
