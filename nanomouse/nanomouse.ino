@@ -121,7 +121,7 @@ void setMaze(Location l, byte value) {
 }
 
 bool isWall(Location location, ABS_DIR dir) {
-  return getMaze(location) & dir == dir;
+  return (getMaze(location) & dir) == dir;
 }
 
 void setup() {
