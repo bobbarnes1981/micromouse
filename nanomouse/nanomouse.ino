@@ -5,10 +5,10 @@
 #define MAX_QUEUE_LENGTH 256
 
 enum ABS_DIR {
-  NORTH,
-  EAST,
-  SOUTH,
-  WEST
+  NORTH = 0x01,
+  EAST  = 0x02,
+  SOUTH = 0x04,
+  WEST  = 0x08
 };
 
 struct Location {
