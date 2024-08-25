@@ -91,6 +91,19 @@ void enqueue(Location location) {
   }
 }
 
+Location dequeue() {
+  // take item from front of queue
+  Location location = queue[0];
+  // decrement the queue length
+  queueLength -= 1;
+  // move every item up the queue
+  for (int i = 0; i < queueLength; i++) {
+    queue[i] = queue[i+1];
+  }
+  // return the location
+  return location;
+}
+
 int getFlood(Location l) {
   return flood[MAZE_Y-1-l.Y][l.X];
 }
@@ -105,19 +118,6 @@ byte getMaze(Location l) {
 
 void setMaze(Location l, byte value) {
   maze[MAZE_Y-1-l.Y][l.X] = value;
-}
-
-Location dequeue() {
-  // take item from front of queue
-  Location location = queue[0];
-  // move every item up the queue
-  for (int i = 0; i < queueLength-1; i++) {
-    queue[i] = queue[i+1];
-  }
-  // decrement the queue length
-  queueLength -= 1;
-  // return the location
-  return location;
 }
 
 bool isWall(Location location, ABS_DIR dir) {
