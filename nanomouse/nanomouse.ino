@@ -16,6 +16,9 @@ struct Location {
   byte Y;
 };
 
+// for debug
+char buf[256];
+
 unsigned long prevMillis = 0;
 
 byte maze[MAZE_Y][MAZE_X] = {
@@ -171,7 +174,9 @@ void serialFlood() {
   prevMillis = m;
   for (int y = 0; y < MAZE_Y; y++) {
     for (int x = 0; x < MAZE_X; x++) {
-      Serial.print(getFlood({x, y}));
+      int val = getFlood({x, MAZE_Y-1-y});
+      sprintf(buf, "%03d", val);
+      Serial.print(buf);
       Serial.print(",");
     }
     Serial.println("");
