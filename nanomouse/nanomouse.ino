@@ -152,7 +152,6 @@ void processFlood() {
   enqueue({8,8});
   // flood
   while(queueLength > 0) {
-    int x, y;
     Location l = dequeue();
     int score = getFlood(l);
     Location n = { l.X, l.Y + 1 };
