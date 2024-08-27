@@ -411,12 +411,45 @@ Location getNeighbour(Location l, ABS_DIR dir) {
 
 void serialFlood() {
   for (int y = 0; y < MAZE_Y; y++) {
+    
+    Serial.print("o");
+    for (int x = 0; x < MAZE_X; x++) {
+      if (isWall({x,MAZE_Y-1-y}, NORTH)) {
+        Serial.print("---");
+      } else {
+        Serial.print("   ");
+      }
+      Serial.print("o");
+    }
+    Serial.println("");
+
+    if (isWall({0,MAZE_Y-1-y}, WEST)) {
+      Serial.print("|");
+    } else {
+      Serial.print(" ");
+    }
     for (int x = 0; x < MAZE_X; x++) {
       int val = getFlood({x, MAZE_Y-1-y});
       sprintf(buf, "%03d", val);
       Serial.print(buf);
-      Serial.print(",");
+      //Serial.print("   ");
+      if (isWall({x,MAZE_Y-1-y}, EAST)) {
+        Serial.print('|');
+      } else {
+        Serial.print(" ");
+      }
     }
     Serial.println("");
   }
+    
+  Serial.print("o");
+  for (int x = 0; x < MAZE_X; x++) {
+    if (isWall({x,MAZE_Y-1-15}, SOUTH)) {
+      Serial.print("---");
+    } else {
+      Serial.print("   ");
+    }
+    Serial.print("o");
+  }
+  Serial.println("");
 }
