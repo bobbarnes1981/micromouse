@@ -1,5 +1,5 @@
 
-#define EMPTY -1
+#define EMPTY 255
 #define MAZE_X 16
 #define MAZE_Y 16
 #define MAX_QUEUE_LENGTH 256
@@ -28,7 +28,7 @@ struct Location {
 };
 
 struct Step {
-  int Value;
+  byte Value;
   Location Coord;
   ABS_DIR Abs;
   REL_DIR Rel;
@@ -77,9 +77,7 @@ byte maze[MAZE_Y][MAZE_X] = {
 //   { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
 // };
 
-// byte is smaller but how would we represent EMPTY? 255? and hope we never need it for a flood value?
-// TODO: use 255 as EMPTY
-int flood[MAZE_Y][MAZE_X] = {
+byte flood[MAZE_Y][MAZE_X] = {
   { EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY },
   { EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY },
   { EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY },
@@ -124,11 +122,11 @@ Location dequeue() {
   return location;
 }
 
-int getFlood(Location l) {
+byte getFlood(Location l) {
   return flood[MAZE_Y-1-l.Y][l.X];
 }
 
-void setFlood(Location l, int value) {
+void setFlood(Location l, byte value) {
   flood[MAZE_Y-1-l.Y][l.X] = value;
 }
 
@@ -222,7 +220,7 @@ void generateRoute(Location origin, ABS_DIR abs, REL_DIR rel) {
   ABS_DIR currentAbs = abs;
   REL_DIR currentRel = rel;
 
-  int targetVal = getFlood(origin);
+  byte targetVal = getFlood(origin);
   int currentLength = 0;
   int currentScore = 0;
 
@@ -295,9 +293,13 @@ void generateRoute(Location origin, ABS_DIR abs, REL_DIR rel) {
     }
   }
   Serial.println("");
+  Serial.print("Length: ");
+  Serial.println(routeLength);
+  Serial.print("Score: ");
+  Serial.println(routeScore);
 }
 
-int getSteps(Location l, ABS_DIR facing, int requiredValue) {
+int getSteps(Location l, ABS_DIR facing, byte requiredValue) {
   int count = 0;
 
   Step s;
