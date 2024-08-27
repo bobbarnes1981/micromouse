@@ -78,6 +78,7 @@ byte maze[MAZE_Y][MAZE_X] = {
 // };
 
 // byte is smaller but how would we represent EMPTY? 255? and hope we never need it for a flood value?
+// TODO: use 255 as EMPTY
 int flood[MAZE_Y][MAZE_X] = {
   { EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY },
   { EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY },
