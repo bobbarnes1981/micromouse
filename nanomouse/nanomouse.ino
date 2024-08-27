@@ -194,29 +194,33 @@ void processFlood() {
   while(queueLength > 0) {
     Location l = dequeue();
     byte score = getFlood(l);
-    Location n = { l.X, l.Y + 1 }; // TODO: use neighbour function, simplify 4 if statements
-    if (n.X >= 0 && n.Y >= 0 && n.X < MAZE_X && n.Y < MAZE_Y && !isWall(l, NORTH)) {
+    ABS_DIR direction = NORTH;
+    Location n = getNeighbour(l, direction);
+    if (n.X != -1 && n.Y != -1 && !isWall(l, direction)) {
       if (getFlood(n) == EMPTY) {
         setFlood(n, score+1);
         enqueue(n);
       }
     }
-    Location e = { l.X + 1, l.Y };
-    if (e.X >= 0 && e.Y >= 0 && e.X < MAZE_X && e.Y < MAZE_Y && !isWall(l, EAST)) {
+    direction = EAST;
+    Location e = getNeighbour(l, direction);
+    if (e.X != -1 && e.Y != -1 && !isWall(l, direction)) {
       if (getFlood(e) == EMPTY) {
         setFlood(e, score+1);
         enqueue(e);
       }
     }
-    Location s = { l.X, l.Y - 1 };
-    if (s.X >= 0 && s.Y >= 0 && s.X < MAZE_X && s.Y < MAZE_Y && !isWall(l, SOUTH)) {
+    direction = SOUTH;
+    Location s = getNeighbour(l, direction);
+    if (s.X != -1 && s.Y != -1 && !isWall(l, direction)) {
       if (getFlood(s) == EMPTY) {
         setFlood(s, score+1);
         enqueue(s);
       }
     }
-    Location w = { l.X - 1, l.Y };
-    if (w.X >= 0 && w.Y >= 0 && w.X < MAZE_X && w.Y < MAZE_Y && !isWall(l, WEST)) {
+    direction = WEST;
+    Location w = getNeighbour(l, direction);
+    if (w.X != -1 && w.Y != -1 && !isWall(l, direction)) {
       if (getFlood(w) == EMPTY) {
         setFlood(w, score+1);
         enqueue(w);
