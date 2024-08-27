@@ -193,7 +193,6 @@ void processFlood() {
     Location l = dequeue();
     Location _l;
     byte score = getFlood(l);
-    ABS_DIR direction = NORTH;
     for (byte direction = 1; direction <= 8; direction*=2) {
       _l = getNeighbour(l, direction);
       if (_l.X != -1 && _l.Y != -1 && !isWall(l, direction)) {
