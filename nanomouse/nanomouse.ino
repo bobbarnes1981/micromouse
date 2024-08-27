@@ -193,37 +193,16 @@ void processFlood() {
   // flood
   while(queueLength > 0) {
     Location l = dequeue();
+    Location _l;
     byte score = getFlood(l);
     ABS_DIR direction = NORTH;
-    Location n = getNeighbour(l, direction);
-    if (n.X != -1 && n.Y != -1 && !isWall(l, direction)) {
-      if (getFlood(n) == EMPTY) {
-        setFlood(n, score+1);
-        enqueue(n);
-      }
-    }
-    direction = EAST;
-    Location e = getNeighbour(l, direction);
-    if (e.X != -1 && e.Y != -1 && !isWall(l, direction)) {
-      if (getFlood(e) == EMPTY) {
-        setFlood(e, score+1);
-        enqueue(e);
-      }
-    }
-    direction = SOUTH;
-    Location s = getNeighbour(l, direction);
-    if (s.X != -1 && s.Y != -1 && !isWall(l, direction)) {
-      if (getFlood(s) == EMPTY) {
-        setFlood(s, score+1);
-        enqueue(s);
-      }
-    }
-    direction = WEST;
-    Location w = getNeighbour(l, direction);
-    if (w.X != -1 && w.Y != -1 && !isWall(l, direction)) {
-      if (getFlood(w) == EMPTY) {
-        setFlood(w, score+1);
-        enqueue(w);
+    for (byte direction = 1; direction <= 8; direction*=2) {
+      _l = getNeighbour(l, direction);
+      if (_l.X != -1 && _l.Y != -1 && !isWall(l, direction)) {
+        if (getFlood(_l) == EMPTY) {
+          setFlood(_l, score+1);
+          enqueue(_l);
+        }
       }
     }
   }
