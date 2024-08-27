@@ -193,7 +193,7 @@ void processFlood() {
   while(queueLength > 0) {
     Location l = dequeue();
     byte score = getFlood(l);
-    Location n = { l.X, l.Y + 1 };
+    Location n = { l.X, l.Y + 1 }; // TODO: use neighbour function, simplify 4 if statements
     if (n.X >= 0 && n.Y >= 0 && n.X < MAZE_X && n.Y < MAZE_Y && !isWall(l, NORTH)) {
       if (getFlood(n) == EMPTY) {
         setFlood(n, score+1);
