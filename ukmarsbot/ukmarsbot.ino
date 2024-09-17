@@ -46,11 +46,11 @@ void loop() {
     
     int batVolts = map(analogRead(BATTERY_VOLTS), 0, 1023, 0, 9);
 
-    Serial.print("Battery: ");
+    Serial.print("Batt: ");
     Serial.print(batVolts);
-    Serial.println("v");
+    Serial.print("v ");
 
-    int funcSelect = analogRead(FUNC_SELECT);
+    int function_select_read = analogRead(FUNC_SELECT);
     // button 1023
     // Draws a curve...
     // 4321   val   diff  diff
@@ -70,21 +70,37 @@ void loop() {
     // 1011   214   59    16
     // 0111   130   84    -25
     // 1111   044   86    2
+    int function_select = -1;
+    if (function_select_read > (663+((1023-663)/2))) {
+      function_select = 16;
+    } else {
+      int dip_vals[] = { 663, 649, 632, 617, 591, 571, 546, 523, 466, 434, 390, 348, 273, 214, 130, 44, 0 };
+      for (int i = 0; i < 16; i++) {
+        if (function_select_read > (dip_vals[i+1]+((dip_vals[i]-dip_vals[i+1])/2))) {
+          function_select = i;
+          break;
+        }
+      }
+    }
     Serial.print("Func: ");
-    Serial.println(funcSelect);
+    Serial.print(function_select);
+    Serial.print(" ");
     
     digitalWrite(EMITTERS, HIGH);
 
     lWallVal = analogRead(L_WALL);
     cWallVal = analogRead(C_WALL);
     rWallVal = analogRead(R_WALL);
+
+    digitalWrite(EMITTERS, LOW);
+
+    Serial.print("Walls: ");
     Serial.print(lWallVal);
     Serial.print(" : ");
     Serial.print(cWallVal);
     Serial.print(" : ");
-    Serial.println(rWallVal);
-
-    digitalWrite(EMITTERS, LOW);
+    Serial.print(rWallVal);
+    Serial.println("");
   
   }
 
