@@ -32,6 +32,10 @@ void setup() {
 unsigned long lastMillis = 0;
 unsigned long elapsedMillis = 0;
 
+int lWallVal = 0;
+int cWallVal = 0;
+int rWallVal = 0;
+
 void loop() {
   unsigned long m = millis();
   elapsedMillis += m - lastMillis;
@@ -71,18 +75,19 @@ void loop() {
     
     digitalWrite(EMITTERS, HIGH);
 
-    int lWall = analogRead(L_WALL);
-    int cWall = analogRead(C_WALL);
-    int rWall = analogRead(R_WALL);
-    Serial.print(lWall);
+    lWallVal = analogRead(L_WALL);
+    cWallVal = analogRead(C_WALL);
+    rWallVal = analogRead(R_WALL);
+    Serial.print(lWallVal);
     Serial.print(" : ");
-    Serial.print(cWall);
+    Serial.print(cWallVal);
     Serial.print(" : ");
-    Serial.println(rWall);
+    Serial.println(rWallVal);
 
     digitalWrite(EMITTERS, LOW);
   
-    digitalWrite(L_LED, cWall > C_WALL_MIN || lWall > L_WALL_MIN ? HIGH : LOW);
-    digitalWrite(R_LED, cWall > C_WALL_MIN || rWall > R_WALL_MIN ? HIGH : LOW);
   }
+
+  digitalWrite(L_LED, cWallVal > C_WALL_MIN || lWallVal > L_WALL_MIN ? HIGH : LOW);
+  digitalWrite(R_LED, cWallVal > C_WALL_MIN || rWallVal > R_WALL_MIN ? HIGH : LOW);
 }
