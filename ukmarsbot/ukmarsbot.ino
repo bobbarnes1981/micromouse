@@ -1,53 +1,53 @@
-#define L_LED 11
-#define R_LED 6
+#define LED_L 11
+#define LED_R 6
 
-#define L_WALL A2
-#define C_WALL A1
-#define R_WALL A0
+#define WALL_L A2
+#define WALL_C A1
+#define WALL_R A0
 
 #define EMITTERS 12
 
 #define BATTERY_VOLTS A7
 #define FUNC_SELECT A6
 
-#define L_WALL_MIN 300
-#define C_WALL_MIN 300
-#define R_WALL_MIN 300
+#define WALL_MIN_L 120
+#define WALL_MIN_C 120
+#define WALL_MIN_R 120
 
 void setup() {
   Serial.begin(9600);
   
-  pinMode(L_LED, OUTPUT);
-  pinMode(R_LED, OUTPUT);
+  pinMode(LED_L, OUTPUT);
+  pinMode(LED_R, OUTPUT);
 
-  pinMode(L_WALL, INPUT);
-  pinMode(C_WALL, INPUT);
-  pinMode(R_WALL, INPUT);
+  pinMode(WALL_L, INPUT);
+  pinMode(WALL_C, INPUT);
+  pinMode(WALL_R, INPUT);
 
   pinMode(EMITTERS, OUTPUT);
   pinMode(BATTERY_VOLTS, INPUT);
   pinMode(FUNC_SELECT, INPUT);
 }
 
-unsigned long lastMillis = 0;
-unsigned long elapsedMillis = 0;
+unsigned long last_millis = 0;
+unsigned long elapsed_millis = 0;
 
-int lWallVal = 0;
-int cWallVal = 0;
-int rWallVal = 0;
+int wall_val_l = 0;
+int wall_val_c = 0;
+int wall_val_r = 0;
 
 void loop() {
   unsigned long m = millis();
-  elapsedMillis += m - lastMillis;
-  lastMillis = m;
+  elapsed_millis += m - last_millis;
+  last_millis = m;
   
-  if (elapsedMillis > 1000) {
-    elapsedMillis = 0;
+  if (elapsed_millis > 1000) {
+    elapsed_millis = 0;
     
-    int batVolts = map(analogRead(BATTERY_VOLTS), 0, 1023, 0, 9);
+    int bat_volts = map(analogRead(BATTERY_VOLTS), 0, 1023, 0, 9);
 
     Serial.print("Batt: ");
-    Serial.print(batVolts);
+    Serial.print(bat_volts);
     Serial.print("v ");
 
     int function_select_read = analogRead(FUNC_SELECT);
@@ -88,22 +88,22 @@ void loop() {
     
     digitalWrite(EMITTERS, HIGH);
 
-    lWallVal = analogRead(L_WALL);
-    cWallVal = analogRead(C_WALL);
-    rWallVal = analogRead(R_WALL);
+    wall_val_l = analogRead(WALL_L);
+    wall_val_c = analogRead(WALL_C);
+    wall_val_r = analogRead(WALL_R);
 
     digitalWrite(EMITTERS, LOW);
 
     Serial.print("Walls: ");
-    Serial.print(lWallVal);
+    Serial.print(wall_val_l);
     Serial.print(" : ");
-    Serial.print(cWallVal);
+    Serial.print(wall_val_c);
     Serial.print(" : ");
-    Serial.print(rWallVal);
+    Serial.print(wall_val_r);
     Serial.println("");
   
   }
 
-  digitalWrite(L_LED, cWallVal > C_WALL_MIN || lWallVal > L_WALL_MIN ? HIGH : LOW);
-  digitalWrite(R_LED, cWallVal > C_WALL_MIN || rWallVal > R_WALL_MIN ? HIGH : LOW);
+  digitalWrite(LED_L, wall_val_c > WALL_MIN_C || wall_val_l > WALL_MIN_L ? HIGH : LOW);
+  digitalWrite(LED_R, wall_val_c > WALL_MIN_C || wall_val_r > WALL_MIN_R ? HIGH : LOW);
 }
