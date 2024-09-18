@@ -14,6 +14,10 @@
 #define WALL_MIN_C 120
 #define WALL_MIN_R 120
 
+#define DELAY 250
+
+//minicom --device /dev/ttyUSB0 --baudrate 9600
+
 void setup() {
   Serial.begin(9600);
   
@@ -41,7 +45,7 @@ void loop() {
   elapsed_millis += m - last_millis;
   last_millis = m;
   
-  if (elapsed_millis > 1000) {
+  if (elapsed_millis > DELAY) {
     elapsed_millis = 0;
     
     int bat_volts = map(analogRead(BATTERY_VOLTS), 0, 1023, 0, 9);
