@@ -14,9 +14,11 @@
 #define WALL_MIN_C 120
 #define WALL_MIN_R 120
 
-#define DELAY 250
+#define DELAY 100
 
 //minicom --device /dev/ttyUSB0 --baudrate 9600
+//minicom --device /dev/rfcomm0 --baudrate 9600
+//HC06 pin 1234
 
 void setup() {
   Serial.begin(9600);
@@ -31,6 +33,8 @@ void setup() {
   pinMode(EMITTERS, OUTPUT);
   pinMode(BATTERY_VOLTS, INPUT);
   pinMode(FUNC_SELECT, INPUT);
+  
+  digitalWrite(EMITTERS, LOW);
 }
 
 unsigned long last_millis = 0;
@@ -89,14 +93,24 @@ void loop() {
     Serial.print("Func: ");
     Serial.print(function_select);
     Serial.print(" ");
+
+    int wall_dark_l = analogRead(WALL_L);
+    int wall_dark_c = analogRead(WALL_C);
+    int wall_dark_r = analogRead(WALL_R);
     
     digitalWrite(EMITTERS, HIGH);
 
-    wall_val_l = analogRead(WALL_L);
-    wall_val_c = analogRead(WALL_C);
-    wall_val_r = analogRead(WALL_R);
+    delayMicroseconds(50);
 
+    int wall_light_l = analogRead(WALL_L);
+    int wall_light_c = analogRead(WALL_C);
+    int wall_light_r = analogRead(WALL_R);
+    
     digitalWrite(EMITTERS, LOW);
+
+    wall_val_l = wall_light_l - wall_dark_l;
+    wall_val_c = wall_light_c - wall_dark_c;
+    wall_val_r = wall_light_r - wall_dark_r;
 
     Serial.print("Walls: ");
     Serial.print(wall_val_l);
