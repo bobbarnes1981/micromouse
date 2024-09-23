@@ -1,4 +1,5 @@
 #include "digitalWriteFast.h"
+#include "motor.h"
 
 #define LED_L 11
 #define LED_R 6
@@ -22,10 +23,6 @@
 #define ENCODER_CLK_R 3
 #define ENCODER_B_L 4
 #define ENCODER_B_R 5
-#define MOTOR_DIR_L 7
-#define MOTOR_DIR_R 8
-#define MOTOR_PWM_L 9
-#define MOTOR_PWM_R 10
 
 #define DELAY 100
 
@@ -43,20 +40,25 @@ int wall_val_r = 0;
 int function_select;
 float battery_volts;
 
-volatile int encoderCountL;
-volatile int encoderCountR;
+volatile int encoder_count_l;
+volatile int encoder_count_r;
 
 void setup() {
   Serial.begin(9600);
   
   pinMode(LED_L, OUTPUT);
+  digitalWrite(LED_L, LOW);
+  
   pinMode(LED_R, OUTPUT);
+  digitalWrite(LED_R, LOW);
 
   pinMode(WALL_L, INPUT);
   pinMode(WALL_C, INPUT);
   pinMode(WALL_R, INPUT);
 
   pinMode(EMITTERS, OUTPUT);
+  digitalWrite(EMITTERS, LOW);
+  
   pinMode(BATTERY_VOLTS, INPUT);
   pinMode(FUNC_SELECT, INPUT);
 
@@ -65,18 +67,28 @@ void setup() {
 
   pinMode(ENCODER_B_L, INPUT);
   pinMode(ENCODER_B_R, INPUT);
-  
-  digitalWrite(EMITTERS, LOW);
 
+  pinMode(MOTOR_DIR_L, OUTPUT);
+  digitalWrite(MOTOR_DIR_L, LOW);
+  
+  pinMode(MOTOR_DIR_R, OUTPUT);
+  digitalWrite(MOTOR_DIR_R, LOW);
+  
+  pinMode(MOTOR_PWM_L, OUTPUT);
+  digitalWrite(MOTOR_PWM_L, LOW);
+  
+  pinMode(MOTOR_PWM_R, OUTPUT);
+  digitalWrite(MOTOR_PWM_R, LOW);
+  
   bitClear(EICRA, ISC01);
   bitSet(EICRA, ISC00);
   bitSet(EIMSK, INT0);
-  encoderCountL = 0;
+  encoder_count_l = 0;
   
   bitClear(EICRA, ISC11);
   bitSet(EICRA, ISC10);
   bitSet(EIMSK, INT1);
-  encoderCountR = 0;
+  encoder_count_r = 0;
 }
 
 ISR(INT0_vect) {
@@ -84,9 +96,9 @@ ISR(INT0_vect) {
   bool newB = bool(digitalReadFast(ENCODER_B_L));
   bool newA = bool(digitalReadFast(ENCODER_CLK_L)) ^ newB;
   if (newA == oldB) {
-    encoderCountL--;
+    encoder_count_l--;
   } else {
-    encoderCountL++;
+    encoder_count_l++;
   }
   oldB = newB;
 }
@@ -96,9 +108,9 @@ ISR(INT1_vect) {
   bool newB = bool(digitalReadFast(ENCODER_B_R));
   bool newA = bool(digitalReadFast(ENCODER_CLK_R)) ^ newB;
   if (newA == oldB) {
-    encoderCountR++;
+    encoder_count_r++;
   } else {
-    encoderCountR--;
+    encoder_count_r--;
   }
   oldB = newB;
 }
@@ -131,11 +143,21 @@ void loop() {
     Serial.print(" ");
 
     Serial.print("EncL: ");
-    Serial.print(encoderCountL);
+    Serial.print(encoder_count_l);
     Serial.print(" ");
     Serial.print("EncR: ");
-    Serial.print(encoderCountR);
+    Serial.print(encoder_count_r);
     Serial.println("");
+
+    if (wall_val_c > WALL_MIN_C) {
+      set_motor_volts(battery_volts, -1.0, -1.0);
+    } else if (wall_val_l > WALL_MIN_L) {
+      set_motor_volts(battery_volts, 1.0, 0.0);
+    } else if (wall_val_r > WALL_MIN_R) {
+      set_motor_volts(battery_volts, 0.0, 1.0);
+    } else {
+      set_motor_volts(battery_volts, 0.0, 0.0);
+    }
   }
 
   digitalWrite(LED_L, wall_val_c > WALL_MIN_C || wall_val_l > WALL_MIN_L ? HIGH : LOW);
