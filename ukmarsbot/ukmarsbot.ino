@@ -1,4 +1,5 @@
 #include "digitalWriteFast.h"
+#include "encoder.h"
 #include "motor.h"
 
 #define LED_L 11
@@ -19,11 +20,6 @@
 #define WALL_MIN_C 120
 #define WALL_MIN_R 120
 
-#define ENCODER_CLK_L 2
-#define ENCODER_CLK_R 3
-#define ENCODER_B_L 4
-#define ENCODER_B_R 5
-
 #define DELAY 100
 
 //minicom --device /dev/ttyUSB0 --baudrate 9600
@@ -39,9 +35,6 @@ int wall_val_r = 0;
 
 int function_select;
 float battery_volts;
-
-volatile int encoder_count_l;
-volatile int encoder_count_r;
 
 void setup() {
   Serial.begin(9600);
@@ -62,57 +55,9 @@ void setup() {
   pinMode(BATTERY_VOLTS, INPUT);
   pinMode(FUNC_SELECT, INPUT);
 
-  pinMode(ENCODER_CLK_L, INPUT);
-  pinMode(ENCODER_CLK_R, INPUT);
+  setup_motors();
 
-  pinMode(ENCODER_B_L, INPUT);
-  pinMode(ENCODER_B_R, INPUT);
-
-  pinMode(MOTOR_DIR_L, OUTPUT);
-  digitalWrite(MOTOR_DIR_L, LOW);
-  
-  pinMode(MOTOR_DIR_R, OUTPUT);
-  digitalWrite(MOTOR_DIR_R, LOW);
-  
-  pinMode(MOTOR_PWM_L, OUTPUT);
-  digitalWrite(MOTOR_PWM_L, LOW);
-  
-  pinMode(MOTOR_PWM_R, OUTPUT);
-  digitalWrite(MOTOR_PWM_R, LOW);
-  
-  bitClear(EICRA, ISC01);
-  bitSet(EICRA, ISC00);
-  bitSet(EIMSK, INT0);
-  encoder_count_l = 0;
-  
-  bitClear(EICRA, ISC11);
-  bitSet(EICRA, ISC10);
-  bitSet(EIMSK, INT1);
-  encoder_count_r = 0;
-}
-
-ISR(INT0_vect) {
-  static bool oldB = 0;
-  bool newB = bool(digitalReadFast(ENCODER_B_L));
-  bool newA = bool(digitalReadFast(ENCODER_CLK_L)) ^ newB;
-  if (newA == oldB) {
-    encoder_count_l--;
-  } else {
-    encoder_count_l++;
-  }
-  oldB = newB;
-}
-
-ISR(INT1_vect) {
-  static bool oldB = 0;
-  bool newB = bool(digitalReadFast(ENCODER_B_R));
-  bool newA = bool(digitalReadFast(ENCODER_CLK_R)) ^ newB;
-  if (newA == oldB) {
-    encoder_count_r++;
-  } else {
-    encoder_count_r--;
-  }
-  oldB = newB;
+  setup_encoders();
 }
 
 void loop() {

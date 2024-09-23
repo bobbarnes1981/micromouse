@@ -5,6 +5,20 @@
 #define MOTOR_PWM_L 9
 #define MOTOR_PWM_R 10
 
+void setup_motors() {
+  pinMode(MOTOR_DIR_L, OUTPUT);
+  digitalWrite(MOTOR_DIR_L, LOW);
+  
+  pinMode(MOTOR_DIR_R, OUTPUT);
+  digitalWrite(MOTOR_DIR_R, LOW);
+  
+  pinMode(MOTOR_PWM_L, OUTPUT);
+  digitalWrite(MOTOR_PWM_L, LOW);
+  
+  pinMode(MOTOR_PWM_R, OUTPUT);
+  digitalWrite(MOTOR_PWM_R, LOW);
+}
+
 void set_motor_pwm_l(int pwm) {
   // basic example without battery
   pwm = constrain(pwm, -255, 255);
