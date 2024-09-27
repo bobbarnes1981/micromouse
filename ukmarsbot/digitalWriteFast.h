@@ -7,6 +7,7 @@
 
 #ifndef __digitalWriteFast_h_
 #define __digitalWriteFast_h_ 1
+#include <Arduino.h>
 
 // general macros/defines
 #ifndef BIT_READ

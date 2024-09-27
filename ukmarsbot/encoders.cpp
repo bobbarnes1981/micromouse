@@ -1,3 +1,8 @@
+#include "encoders.h"
+#include "digitalWriteFast.h"
+
+#include <Arduino.h>
+
 #define ENCODER_CLK_L 2
 #define ENCODER_CLK_R 3
 #define ENCODER_B_L 4
@@ -46,4 +51,12 @@ ISR(INT1_vect) {
     encoder_count_r--;
   }
   oldB = newB;
+}
+
+int get_encoder_count_l() {
+  return encoder_count_l;
+}
+
+int get_encoder_count_r() {
+  return encoder_count_r;
 }

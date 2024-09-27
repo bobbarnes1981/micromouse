@@ -1,3 +1,7 @@
+#include "motors.h"
+
+#include <Arduino.h>
+
 #define MAX_MOTOR_VOLTS 6.0f
 
 #define MOTOR_DIR_L 7

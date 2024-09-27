@@ -1,6 +1,5 @@
-#include "digitalWriteFast.h"
-#include "encoder.h"
-#include "motor.h"
+#include "encoders.h"
+#include "motors.h"
 
 #define LED_L 11
 #define LED_R 6
@@ -45,6 +44,9 @@ void setup() {
   pinMode(LED_R, OUTPUT);
   digitalWrite(LED_R, LOW);
 
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
+
   pinMode(WALL_L, INPUT);
   pinMode(WALL_C, INPUT);
   pinMode(WALL_R, INPUT);
@@ -88,10 +90,10 @@ void loop() {
     Serial.print(" ");
 
     Serial.print("EncL: ");
-    Serial.print(encoder_count_l);
+    Serial.print(get_encoder_count_l());
     Serial.print(" ");
     Serial.print("EncR: ");
-    Serial.print(encoder_count_r);
+    Serial.print(get_encoder_count_r());
     Serial.println("");
 
     if (wall_val_c > WALL_MIN_C) {
@@ -105,8 +107,9 @@ void loop() {
     }
   }
 
-  digitalWrite(LED_L, wall_val_c > WALL_MIN_C || wall_val_l > WALL_MIN_L ? HIGH : LOW);
-  digitalWrite(LED_R, wall_val_c > WALL_MIN_C || wall_val_r > WALL_MIN_R ? HIGH : LOW);
+  digitalWrite(LED_L, wall_val_l > WALL_MIN_L ? HIGH : LOW);
+  digitalWrite(LED_R, wall_val_r > WALL_MIN_R ? HIGH : LOW);
+  digitalWrite(LED_BUILTIN, wall_val_c > WALL_MIN_C ? HIGH : LOW);
 }
 
 void read_battery_volts() {
